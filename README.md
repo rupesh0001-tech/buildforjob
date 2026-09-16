@@ -1,6 +1,6 @@
 # BuildForJob Monorepo
 
-Welcome to the **BuildForJob** monorepo powered by [Turborepo](https://turbo.build/repo) and `pnpm`.
+Welcome to the **BuildForJob** monorepo powered by [Turborepo](https://turbo.build/repo) and [Bun](https://bun.sh/).
 
 ## Repository Structure
 
@@ -19,25 +19,30 @@ buildforjob/
 
 ### Prerequisites
 
-- Node.js (>= 20)
-- pnpm (>= 9) or bun (>= 1.1)
+- Bun (>= 1.1)
+
+### Installation
+
+```bash
+bun install
+```
 
 ### Development
 
 To run all applications in development mode simultaneously:
 
 ```bash
-pnpm dev
+bun dev
 ```
 
 To run a specific app:
 
 ```bash
-pnpm --filter frontend dev
+bun --filter frontend dev
 # or
-pnpm --filter backend dev
+bun --filter backend dev
 # or
-pnpm --filter admin dev
+bun --filter admin dev
 ```
 
 ### Build
@@ -45,7 +50,7 @@ pnpm --filter admin dev
 To build all apps:
 
 ```bash
-pnpm build
+bun build
 ```
 
 ## License
