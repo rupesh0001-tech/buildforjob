@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bfj-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f0c20" />
+      <stop offset="50%" stop-color="#181236" />
+      <stop offset="100%" stop-color="#090714" />
+    </linearGradient>
+
+    <!-- Vibrant Purple-Indigo Accent Gradient -->
+    <linearGradient id="bfj-primary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7" />
+      <stop offset="50%" stop-color="#7c3aed" />
+      <stop offset="100%" stop-color="#4f46e5" />
+    </linearGradient>
+
+    <!-- Cyan-Violet Glow Gradient -->
+    <linearGradient id="bfj-glow" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+
+    <!-- Glass Overlay -->
+    <linearGradient id="bfj-glass" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.02" />
+    </linearGradient>
+
+    <!-- Soft Glow Filter -->
+    <filter id="bfj-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#7c3aed" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Base Rounded Container Badge -->
+  <rect x="32" y="32" width="448" height="448" rx="120" fill="url(#bfj-bg)" />
+  <rect x="32" y="32" width="448" height="448" rx="120" stroke="url(#bfj-primary)" stroke-width="6" stroke-opacity="0.5" />
+  <rect x="38" y="38" width="436" height="436" rx="114" stroke="url(#bfj-glass)" stroke-width="3" />
+
+  <!-- Ambient Light Sphere inside container -->
+  <circle cx="256" cy="220" r="140" fill="#7c3aed" opacity="0.2" filter="blur(30px)" />
+  <circle cx="340" cy="180" r="80" fill="#38bdf8" opacity="0.15" filter="blur(25px)" />
+
+  <!-- Main Emblem: Stylized Interlocking "B" + Ascending Job/Career Rocket Spear -->
+  <g filter="url(#bfj-shadow)">
+    <!-- Back Layer Wing (Left Pillar of B) -->
+    <path d="M152 144 C152 130.745 162.745 120 176 120 L216 120 C229.255 120 240 130.745 240 144 L240 368 C240 381.255 229.255 392 216 392 L176 392 C162.745 392 152 381.255 152 368 Z" fill="url(#bfj-primary)" />
+
+    <!-- Top Loop of B (Ascending Dynamic Arc) -->
+    <path d="M216 120 L300 120 C344.183 120 380 155.817 380 200 C380 234.364 358.337 263.666 327.5 274.6 C322.8 276.3 317.5 273.2 316.5 268.2 L308 226 C307.2 222.2 309.5 218.4 313.2 217.2 C324.5 213.5 332 203.2 332 192 C332 174.327 317.673 160 300 160 L216 160 Z" fill="url(#bfj-glow)" />
+
+    <!-- Bottom Loop of B (Power Forward Surge) -->
+    <path d="M216 252 L312 252 C356.183 252 392 287.817 392 332 C392 376.183 356.183 412 312 412 L176 412 C162.745 412 152 401.255 152 388 L152 368 L312 368 C331.882 368 348 351.882 348 332 C348 312.118 331.882 296 312 296 L216 296 Z" fill="url(#bfj-primary)" />
+
+    <!-- Center Ascending Chevron Spark (Career Growth) -->
+    <path d="M256 168 L304 224 L276 224 L296 272 L232 212 L260 212 Z" fill="#ffffff" opacity="0.95" />
+
+    <!-- AI Sparkle Star -->
+    <path d="M384 108 L390 126 L408 132 L390 138 L384 156 L378 138 L360 132 L378 126 Z" fill="#38bdf8" />
+    <path d="M140 280 L144 292 L156 296 L144 300 L140 312 L136 300 L124 296 L136 292 Z" fill="#a855f7" />
+  </g>
+</svg>

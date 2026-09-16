@@ -1,0 +1,90 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-primary: #001BB7;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+html {
+  font-size: 110%;
+  /* Base font-size scaled by 1.1x (17.6px) */
+}
+
+/* Globally zoom out the application on larger screens (proportional to 110% scaling) */
+@media (min-width: 768px) {
+  html {
+    font-size: 15.4px;
+    /* 14px * 1.1 */
+  }
+}
+
+@media (min-width: 1280px) {
+  html {
+    font-size: 14.3px;
+    /* 13px * 1.1 */
+  }
+}
+
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+
+  /* Firefox */
+  &::-webkit-scrollbar {
+    display: none !important;
+    /* Safari and Chrome */
+  }
+}
+
+/* Global scrollbar hide for specified elements */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Enforce pointer cursor on all interactive elements */
+button,
+a,
+select,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+[role="button"],
+.cursor-pointer,
+.interactive,
+.clickable,
+[onclick] {
+  cursor: pointer !important;
+}
+
+/* Modern icon style — thinner, rounder strokes across all Lucide icons */
+.lucide {
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
