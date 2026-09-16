@@ -34,7 +34,7 @@ export function Navbar({ isScrolled, mobileMenuOpen, setMobileMenuOpen, theme, s
       <div className={cn('max-w-7xl', 'mx-auto', 'px-6', 'flex', 'items-center', 'justify-between')}>
         <div className={cn('flex', 'items-center', 'gap-2')}>
           <Link href="/" className={cn('font-bold', 'text-lg', 'tracking-tight')}>
-            {theme === "light" ? <img src="./logo-black.png" width={140} height={140} alt="logo" /> : <img src="./logo-light.png" width={140} height={140} alt="logo" />}
+             <img src="./logo-black.png" width={140} height={140} alt="logo" />
           </Link>
         </div>
 

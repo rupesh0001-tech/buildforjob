@@ -26,10 +26,11 @@ import {
 import { checkATSScore, getATSSuggestions, getATSReports, unlockReportSuggestions } from "@/apis/ats.api";
 import type { ATSResult, ATSSuggestions } from "@/apis/ats.api";
 import { getCompanies } from "@/apis/companies.api";
+import { paymentApi } from "@/apis/payment.api";
 import { generateJobDescription } from "@/apis/ai.api";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
-import { useAppDispatch } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchProfile } from "@/store/slices/authSlice";
 
 // ─── Score colour helpers ──────────────────────────────────────────────────
@@ -230,6 +231,7 @@ function DropZone({
 
 export default function ATSCheckerPage() {
   const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state: any) => state.auth);
   const [file, setFile] = useState<File | null>(null);
   const [jd, setJd] = useState("");
   const [loading, setLoading] = useState(false);
@@ -238,6 +240,14 @@ export default function ATSCheckerPage() {
   const [suggestions, setSuggestions] = useState<ATSSuggestions | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+
+  const isPro = user?.plan === 'PRO' || user?.plan === 'PRO_MONTHLY' || user?.plan === 'PRO_ANNUAL';
+  const isAnalysisUnlocked = isUnlocked || isPro || !!result?.suggestions || !!suggestions;
+
+  useEffect(() => {
+    dispatch(fetchProfile() as any);
+  }, [dispatch]);
+
 
   // History & Tab Navigation State
   const [activeTab, setActiveTab] = useState<"scan" | "history">("scan");
@@ -325,6 +335,13 @@ export default function ATSCheckerPage() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    if (result && (isPro || result.suggestions) && !suggestions && !suggestionsLoading) {
+      handleUnlockAndAnalyze();
+    }
+  }, [result, isPro]);
+
+
   const handleCheck = async () => {
     if (!file || jd.trim().length < 20) return;
     setLoading(true);
@@ -345,6 +362,81 @@ export default function ATSCheckerPage() {
     }
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise<boolean>((resolve) => {
+      if ((window as any).Razorpay) return resolve(true);
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePurchasePro = async () => {
+    if (isPro) {
+      handleUnlockAndAnalyze();
+      return;
+    }
+    try {
+      setSuggestionsLoading(true);
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        toast.error("Failed to load Razorpay SDK. Please check your network connection.");
+        setSuggestionsLoading(false);
+        return;
+      }
+
+      const orderData = await paymentApi.createOrder('PRO_MONTHLY');
+      const options = {
+        key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TcZCA8XhXHM8pZ',
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'BuildForJob',
+        description: 'Pro Plan Subscription (Monthly)',
+        image: '/favicon.png',
+        order_id: orderData.orderId,
+        prefill: {
+          name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
+          email: user?.email || '',
+        },
+        theme: { color: '#001BB7' },
+        handler: async function (response: any) {
+          try {
+            const verifyRes = await paymentApi.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              plan: 'PRO_MONTHLY',
+            });
+            if (verifyRes.success) {
+              toast.success("🎉 Payment successful! Pro Plan activated.");
+              setIsUnlocked(true);
+              await dispatch(fetchProfile() as any);
+              handleUnlockAndAnalyze();
+            } else {
+              toast.error(verifyRes.message || "Payment verification failed");
+            }
+          } catch (err: any) {
+            toast.error(getErrorMessage(err, "Payment verification failed."));
+          } finally {
+            setSuggestionsLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setSuggestionsLoading(false);
+          },
+        },
+      };
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    } catch (err: any) {
+      toast.error(getErrorMessage(err, "Failed to initiate payment."));
+      setSuggestionsLoading(false);
+    }
+  };
+
   const handleUnlockAndAnalyze = async () => {
     setIsUnlocked(true);
     setSuggestionsLoading(true);
@@ -352,17 +444,19 @@ export default function ATSCheckerPage() {
       let suggestionsData;
       if (result?.id) {
         suggestionsData = await unlockReportSuggestions(result.id);
-      } else {
-        suggestionsData = await getATSSuggestions(file!, jd);
+      } else if (file) {
+        suggestionsData = await getATSSuggestions(file, jd);
       }
-      setSuggestions(suggestionsData);
-      
-      // Update result state suggestions to preserve cache when switching tabs
-      if (result) {
-        setResult({
-          ...result,
-          suggestions: suggestionsData,
-        });
+      if (suggestionsData) {
+        setSuggestions(suggestionsData);
+        
+        // Update result state suggestions to preserve cache when switching tabs
+        if (result) {
+          setResult({
+            ...result,
+            suggestions: suggestionsData,
+          });
+        }
       }
       dispatch(fetchProfile() as any);
     } catch (err: unknown) {
@@ -1048,7 +1142,7 @@ export default function ATSCheckerPage() {
                 </div>
                 
                 {/* Download PDF Report button */}
-                {isUnlocked && suggestions && (
+                {isAnalysisUnlocked && suggestions && (
                   <button
                     onClick={handleDownloadPDF}
                     className="flex items-center gap-1.5 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-500/20 transition-all active:scale-95 cursor-pointer"
@@ -1061,7 +1155,7 @@ export default function ATSCheckerPage() {
               <div className="flex-1 relative px-8 py-12 overflow-hidden bg-gray-50/30 dark:bg-black/20">
                 {/* Suggestions Container */}
                 <div className="relative z-10">
-                  {suggestionsLoading && isUnlocked ? (
+                  {suggestionsLoading && isAnalysisUnlocked ? (
                     <div className="flex flex-col items-center justify-center py-24 gap-6">
                       <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-600 rounded-full animate-spin" />
                       <div className="text-center space-y-2">
@@ -1069,7 +1163,7 @@ export default function ATSCheckerPage() {
                         <p className="text-sm text-gray-500 font-semibold tracking-wide">Evaluating impact and identifying key gaps</p>
                       </div>
                     </div>
-                  ) : !isUnlocked ? (
+                  ) : !isAnalysisUnlocked ? (
                     /* Locked State - Placeholder UI */
                     <div className="space-y-12 blur-[6px] opacity-60 select-none pointer-events-none">
                       {Array(6).fill(null).map((_, i) => (
@@ -1165,7 +1259,7 @@ export default function ATSCheckerPage() {
                 </div>
 
                 {/* Paywall Overlay */}
-                {!isUnlocked && (
+                {!isAnalysisUnlocked && (
                   <div className="absolute inset-0 z-20 flex items-center justify-center p-8 bg-white/20 dark:bg-black/40">
                      <motion.div 
                         initial={{ opacity: 0, scale: 0.95, y: 30 }}
@@ -1178,11 +1272,20 @@ export default function ATSCheckerPage() {
                         </p>
                         
                         <button 
-                          onClick={handleUnlockAndAnalyze}
-                          className="w-full py-5 bg-primary hover:brightness-110 text-white rounded-[24px] font-semibold shadow-xl shadow-primary/30 transition-all active:scale-[0.97] cursor-pointer flex items-center justify-center gap-3 group text-lg"
+                          onClick={isPro ? handleUnlockAndAnalyze : handlePurchasePro}
+                          disabled={suggestionsLoading}
+                          className="w-full py-5 bg-primary hover:brightness-110 text-white rounded-[24px] font-semibold shadow-xl shadow-primary/30 transition-all active:scale-[0.97] cursor-pointer flex items-center justify-center gap-3 group text-lg disabled:opacity-50"
                         >
-                           Purchase Pro · ₹9 ($0.11)
-                           <RotateCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                          {suggestionsLoading ? (
+                            <>
+                              <Loader2 className="w-5 h-5 animate-spin" /> Unlocking...
+                            </>
+                          ) : (
+                            <>
+                              Purchase Pro · ₹2 ($0.02)
+                              <RotateCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                            </>
+                          )}
                         </button>
                         
                         <div className="mt-6 flex items-center justify-center gap-6">

@@ -13,6 +13,7 @@ import { aiRouter } from './routes/ai/ai.routes';
 import { companiesRouter } from './routes/companies/companies.routes';
 import portfolioRouter from './routes/portfolio/portfolio.routes';
 import { adminRouter } from './routes/admin/admin.routes';
+import paymentRouter from './routes/payment/payment.routes';
 import { errorMiddleware } from './middlewares/error/error.middleware';
 import prisma from './config/db.config';
 
@@ -27,10 +28,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://checkout.razorpay.com"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      imgSrc: ["'self'", "data:", "https://ik.imagekit.io"],
-      connectSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https://ik.imagekit.io", "https://*.razorpay.com"],
+      connectSrc: ["'self'", "https://lumberjack.razorpay.com", "https://api.razorpay.com"],
+      frameSrc: ["'self'", "https://api.razorpay.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
@@ -86,6 +88,7 @@ app.use('/ai', aiRouter);
 app.use('/companies', companiesRouter);
 app.use('/portfolio', portfolioRouter);
 app.use('/admin', adminRouter);
+app.use('/payment', paymentRouter);
 
 // Root
 app.get('/', (req, res) => {
