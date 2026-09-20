@@ -29,8 +29,30 @@ body {
 }
 
 html {
+  scroll-behavior: smooth !important;
   font-size: 110%;
   /* Base font-size scaled by 1.1x (17.6px) */
+}
+
+/* Lenis Smooth Scroll Styles */
+html.lenis, html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
 }
 
 /* Globally zoom out the application on larger screens (proportional to 110% scaling) */

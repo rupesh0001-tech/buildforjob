@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
+import Lenis from "lenis";
 import { Navbar } from "@/components/sections/navbar/navbar";
 import { HeroSection } from "@/components/sections/hero/hero-section";
 import { LogosSection } from "@/components/sections/logos/logos-section";
@@ -22,11 +23,29 @@ export default function LandingPage() {
   
   useEffect(() => {
     setMounted(true);
+
+    // Initialize Lenis momentum smooth scrolling
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    });
+
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      lenis.destroy();
+    };
   }, []);
 
   if (!mounted) return null; // Avoid hydration mismatch

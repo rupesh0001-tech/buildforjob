@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { Check, Loader2 } from '@/lib/icons';
 import { useAppSelector } from "@/store/hooks";
 import { useRouter } from "next/navigation";
@@ -104,7 +105,13 @@ export function PricingSection() {
 
   return (
     <section id="pricing" className="py-24 max-w-7xl mx-auto px-6 border-t border-black/5 dark:border-white/5 mt-12">
-      <div className="text-center mb-16">
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.6 }}
+        className="text-center mb-16"
+      >
         <h2 className="text-3xl md:text-5xl font-extrabold mb-6 text-slate-900 dark:text-white tracking-tight">
           Simple,{" "}
           <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-400 bg-clip-text text-transparent">
@@ -127,11 +134,17 @@ export function PricingSection() {
             Annually <span className="text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Save 20%</span>
           </button>
         </div>
-      </div>
+      </motion.div>
 
       <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto items-stretch">
         {/* Starter (Free) Plan */}
-        <div className="p-8 rounded-3xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 flex flex-col justify-between hover:border-blue-500/40 transition-all duration-300 shadow-sm">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="p-8 rounded-3xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 flex flex-col justify-between hover:border-blue-500/40 transition-all duration-300 shadow-sm"
+        >
           <div>
             <h3 className="text-xl font-bold text-black dark:text-white mb-2">Starter</h3>
             <p className="text-gray-500 text-sm mb-6 font-medium">Perfect to test the waters and start building</p>
@@ -166,10 +179,16 @@ export function PricingSection() {
               ))}
             </ul>
           </div>
-        </div>
+        </motion.div>
         
         {/* Pro Plan */}
-        <div className="p-8 rounded-3xl bg-black dark:bg-[#111116] border-2 border-blue-600 shadow-2xl shadow-blue-600/10 flex flex-col justify-between relative hover:scale-[1.01] transition-all duration-300">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="p-8 rounded-3xl bg-black dark:bg-[#111116] border-2 border-blue-600 shadow-2xl shadow-blue-600/10 flex flex-col justify-between relative hover:scale-[1.01] transition-all duration-300"
+        >
           <div className="absolute top-0 right-8 transform -translate-y-1/2">
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">MOST POPULAR</span>
           </div>
@@ -215,7 +234,7 @@ export function PricingSection() {
               ))}
             </ul>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

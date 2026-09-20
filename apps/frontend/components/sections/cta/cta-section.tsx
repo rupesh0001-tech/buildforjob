@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { CheckCircle } from '@/lib/icons';
 import ScrollRevealParagraph from "@/components/scroll-reveal-paragraph";
 import { useAppSelector } from "@/store/hooks";
@@ -15,7 +16,13 @@ export function CtaSection() {
 
   return (
     <section className="py-16 md:py-24 px-6">
-      <div className="max-w-5xl mx-auto rounded-3xl overflow-hidden relative border border-gray-200 dark:border-white/10 shadow-2xl">
+      <motion.div 
+        initial={{ opacity: 0, y: 40, scale: 0.98 }}
+        whileInView={{ opacity: 1, y: 0, scale: 1 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.6 }}
+        className="max-w-5xl mx-auto rounded-3xl overflow-hidden relative border border-gray-200 dark:border-white/10 shadow-2xl"
+      >
         <div className="absolute inset-0 bg-linear-to-br from-purple-100 via-blue-50 to-white dark:from-purple-900/40 dark:via-blue-900/40 dark:to-black z-0" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/10 dark:bg-purple-500/20 rounded-full blur-[100px] translate-x-1/3 -translate-y-1/3" />
         
@@ -59,7 +66,7 @@ export function CtaSection() {
              </div>
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

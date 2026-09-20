@@ -78,35 +78,23 @@ export function TestimonialsSection() {
       <div className="max-w-7xl mx-auto px-6 relative z-10 text-center">
         
         {/* Section Heading & Swipe Controls Above Card */}
-        <div className="mb-10 flex flex-col items-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6 }}
+          className="mb-10 flex flex-col items-center"
+        >
           <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-3">
             Loved by{" "}
             <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-400 bg-clip-text text-transparent">
               candidate champions.
             </span>
           </h2>
-          <p className="text-slate-600 dark:text-gray-400 text-base md:text-lg max-w-xl mx-auto mb-6">
+          <p className="text-slate-600 dark:text-gray-400 text-base md:text-lg max-w-xl mx-auto">
             Swipe through stories from candidates who landed top tier offers with BuildForJob.
           </p>
-
-          {/* Navigation Controls Above Cards Stack */}
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={handlePrev}
-              aria-label="Previous testimonial"
-              className="w-10 h-10 rounded-full bg-white dark:bg-purple-950 border border-slate-200 dark:border-purple-800 text-slate-700 dark:text-white flex items-center justify-center shadow-sm hover:bg-slate-50 dark:hover:bg-purple-900 transition-colors focus:outline-none"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            <button 
-              onClick={handleNext}
-              aria-label="Next testimonial"
-              className="w-10 h-10 rounded-full bg-white dark:bg-purple-950 border border-slate-200 dark:border-purple-800 text-slate-700 dark:text-white flex items-center justify-center shadow-sm hover:bg-slate-50 dark:hover:bg-purple-900 transition-colors focus:outline-none"
-            >
-              <ChevronRight size={18} />
-            </button>
-          </div>
-        </div>
+        </motion.div>
 
         {/* Stacked Badge Cards Container */}
         <div className="relative w-full max-w-xl mx-auto min-h-[460px] flex items-center justify-center">
