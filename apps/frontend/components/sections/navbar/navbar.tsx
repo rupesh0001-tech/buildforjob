@@ -33,8 +33,21 @@ export function Navbar({ isScrolled, mobileMenuOpen, setMobileMenuOpen, theme, s
     >
       <div className={cn('max-w-7xl', 'mx-auto', 'px-6', 'flex', 'items-center', 'justify-between')}>
         <div className={cn('flex', 'items-center', 'gap-2')}>
-          <Link href="/" className={cn('font-bold', 'text-lg', 'tracking-tight')}>
-             <img src="./logo-black.png" width={140} height={140} alt="logo" />
+          <Link href="/" className={cn('font-bold', 'text-lg', 'tracking-tight', 'flex', 'items-center')}>
+             <img 
+               src="/logo-black.png" 
+               width={140} 
+               height={40} 
+               alt="BuildForJob Logo" 
+               className="w-[140px] h-auto dark:hidden block object-contain" 
+             />
+             <img 
+               src="/logo-light.png" 
+               width={140} 
+               height={40} 
+               alt="BuildForJob Logo" 
+               className="w-[140px] h-auto hidden dark:block object-contain" 
+             />
           </Link>
         </div>
 

@@ -13,7 +13,7 @@ export function HeroHeadline() {
       className={cn('text-3xl', 'md:text-6xl', 'font-bold', 'tracking-tight', 'mb-6', 'leading-[1.1]', 'text-black', 'dark:text-white')}
     >
       Single platform for AI powered <br /> <WordRotate 
-        className={cn('text-transparent', 'my-1', 'bg-clip-text', 'bg-linear-to-r', 'from-purple-500', 'to-blue-500', 'dark:from-purple-400', 'dark:to-emerald-200')} 
+        className={cn('text-transparent', 'my-1', 'bg-clip-text', 'bg-gradient-to-r', 'from-blue-600', 'via-indigo-600', 'to-blue-500', 'dark:from-blue-400', 'dark:via-indigo-300', 'dark:to-blue-400')} 
         words={["Resume Builder ", "Cover Letter Builder", "Portfolio Builder", "ATS Checker"]} 
       />
       <br className={cn('hidden', 'md:block')} />

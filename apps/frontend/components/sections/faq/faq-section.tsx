@@ -28,7 +28,13 @@ export function FaqSection() {
   return (
     <section className="py-24 max-w-4xl mx-auto px-6">
       <div className="text-center mb-16">
-         <h2 className="text-3xl md:text-5xl font-bold mb-4 text-black dark:text-white">Frequently Asked Questions</h2>
+         <h2 className="text-3xl md:text-5xl font-extrabold mb-4 text-slate-900 dark:text-white tracking-tight">
+           Frequently{" "}
+           <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 dark:from-blue-400 dark:via-indigo-400 dark:to-blue-400 bg-clip-text text-transparent">
+             Asked
+           </span>{" "}
+           Questions
+         </h2>
          <p className="text-gray-600 dark:text-gray-400 text-lg">Got a different question? Reach out to support.</p>
       </div>
 

@@ -38,7 +38,7 @@ export function HeroCta() {
     <motion.div variants={fadeUp} className="flex flex-col items-center gap-4 max-w-xl mx-auto w-full">
       {/* Integrated Pill Input Form */}
       <form onSubmit={handleSubmit} className="w-full relative flex flex-col items-center">
-        <div className="w-full relative flex items-center p-1.5 rounded-full bg-white dark:bg-[#12101e] border border-[#e6e1fe] dark:border-purple-900/40 shadow-xl shadow-purple-900/5 focus-within:ring-2 focus-within:ring-[#6e56cf]/40 transition-all">
+        <div className="w-full relative flex items-center p-1.5 rounded-full bg-white dark:bg-[#12101e] border border-blue-100 dark:border-blue-900/40 shadow-xl shadow-blue-900/5 focus-within:ring-2 focus-within:ring-blue-500/40 transition-all">
           <div className="pl-4 pr-2 text-gray-400">
             <Mail size={18} />
           </div>
@@ -55,7 +55,7 @@ export function HeroCta() {
           <button 
             type="submit" 
             disabled={submitted}
-            className="h-11 px-6 rounded-full bg-[#6e56cf] hover:bg-[#5b46b8] text-white text-sm font-semibold transition-all shadow-md shadow-purple-500/25 flex items-center gap-2 shrink-0 hover:scale-[1.02] disabled:opacity-80"
+            className="h-11 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-all shadow-md shadow-blue-500/25 flex items-center gap-2 shrink-0 hover:scale-[1.02] disabled:opacity-80"
           >
             {submitted ? (
               <span className="flex items-center gap-1.5 text-xs font-semibold">
