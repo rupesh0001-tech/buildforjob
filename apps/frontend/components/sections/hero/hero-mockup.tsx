@@ -1,28 +1,38 @@
 "use client";
-import { motion } from "framer-motion";
-import { Lock } from '@/lib/icons';
+import React from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { scaleUp } from "@/lib/animation-variants";
+import { cn } from "@/lib/utils";
 
+// Hero mockup interactive component preview
 export function HeroMockup() {
+  const shouldReduceMotion = useReducedMotion();
+
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.4, duration: 0.8 }}
-      className="mt-20 relative mx-auto max-w-5xl perspective-1000"
+      initial={shouldReduceMotion ? "visible" : "hidden"}
+      animate="visible"
+      variants={scaleUp}
+      className={cn('mt-12', 'sm:mt-16', 'relative', 'mx-auto', 'max-w-5xl', 'text-left')}
     >
-      <div className="relative rounded-2xl border-[0.5px] border-black/5 dark:border-white/5 bg-white dark:bg-[#0c0c0e] shadow-2xl overflow-hidden flex transform-gpu rotate-x-12 scale-95 hover:rotate-x-0 hover:scale-100 transition-all duration-700 ease-out group">
-        <div className="w-full relative overflow-hidden group">
+      {/* Ambient background glow */}
+      <div className={cn('absolute', '-inset-2', 'bg-gradient-to-r', 'from-purple-500/20', 'via-indigo-500/15', 'to-purple-600/20', 'rounded-[32px]', 'blur-2xl', 'opacity-75', '-z-10')} />
+
+      {/* Main Glassmorphic Container */}
+      <div className={cn('relative', 'rounded-[24px]', 'bg-white', 'dark:bg-[#0f0d1b]', 'shadow-2xl', 'shadow-purple-900/20', 'overflow-hidden', 'text-left', 'transition-all', 'duration-500', 'hover:shadow-purple-900/30')}>
+        
+        {/* Dashboard Image Canvas */}
+        <div className={cn('relative', 'w-full', 'aspect-[16/9]', 'bg-gray-50', 'dark:bg-[#0c0a18]', 'overflow-hidden', 'group')}>
           <img 
-            src="/dashboard-dark.png" 
-            alt="Dashboard Light" 
-            className="w-full h-auto dark:hidden block transform group-hover:scale-[1.02] transition-transform duration-700" 
+            src="/main-dashboard.png" 
+            alt="BuildForJob Dashboard Preview" 
+            className={cn('w-full', 'h-[calc(100%+4px)]', '-mt-[2px]', 'object-cover', 'object-top', 'scale-[1.01]', 'origin-top', 'transition-transform', 'duration-700', 'ease-out')}
           />
-          <img 
-            src="/dashboard-light.png" 
-            alt="Dashboard Dark" 
-            className="w-full h-auto hidden dark:block transform group-hover:scale-[1.02] transition-transform duration-700" 
-          />
+          
+          {/* Subtle overlay vignette */}
+          <div className={cn('absolute', 'inset-0', 'pointer-events-none', 'bg-gradient-to-t', 'from-black/5', 'dark:from-black/30', 'via-transparent', 'to-transparent')} />
         </div>
+
       </div>
     </motion.div>
   );

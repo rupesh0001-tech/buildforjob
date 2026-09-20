@@ -46,22 +46,19 @@ app.use(helmet({
   },
 }));
 
-// MEDIUM-05: Only allow localhost origins in non-production environments
+// Allow production origins + local origins for development
 const productionOrigins = [
   'https://build-for-job-fe.vercel.app',
   'https://buildforjob.rupeshhh.in',
   'http://buildforjob.rupeshhh.in',
 ];
 
-const allowedOrigins = [...productionOrigins];
-
-if (process.env.NODE_ENV !== 'production') {
-  allowedOrigins.push(
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:3001',
-  );
-}
+const allowedOrigins = [
+  ...productionOrigins,
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:3001',
+];
 
 if (process.env.FRONTEND_URL && !allowedOrigins.includes(process.env.FRONTEND_URL)) {
   allowedOrigins.push(process.env.FRONTEND_URL);

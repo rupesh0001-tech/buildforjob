@@ -127,3 +127,4 @@ export function Navbar({ isScrolled, mobileMenuOpen, setMobileMenuOpen, theme, s
     </header>
   );
 }
+

@@ -1,8 +1,6 @@
 "use client";
 import React from "react";
 import { motion } from "framer-motion";
-import { CheckCircle } from '@/lib/icons';
-
 import { GridBackground } from "@/components/ui/grid-background";
 import { HeroCta } from "./hero-cta";
 import { HeroBadge } from "./hero-badge";
@@ -45,9 +43,6 @@ export function HeroSection() {
 
           {/* <HeroCta /> */}
           
-          <motion.p variants={fadeIn} className="mt-6 text-sm text-gray-500 flex items-center justify-center gap-2">
-            <CheckCircle size={14} className="text-emerald-600 dark:text-emerald-500" /> No credit card required. Free templates included.
-          </motion.p>
         </motion.div>
 
         <HeroMockup />
