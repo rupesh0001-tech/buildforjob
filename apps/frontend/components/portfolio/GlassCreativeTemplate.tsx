@@ -307,7 +307,7 @@ export default function GlassCreativeTemplate({ data, settings }: TemplateProps)
                       )}
                       
                       <div className="flex flex-wrap gap-1.5">
-                        {project.techStack.map((tech, i) => (
+                        {(Array.isArray(project.techStack) ? project.techStack : typeof project.techStack === 'string' ? (project.techStack as string).split(',').map(s => s.trim()).filter(Boolean) : []).map((tech, i) => (
                           <span key={i} className="px-2 py-0.5 bg-white/[0.04] text-[10px] text-gray-300 rounded border border-white/[0.06]">
                             {tech}
                           </span>

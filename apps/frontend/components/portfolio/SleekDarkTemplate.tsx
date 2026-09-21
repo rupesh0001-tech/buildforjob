@@ -298,7 +298,7 @@ export default function SleekDarkTemplate({ data, settings }: TemplateProps) {
                       )}
                       
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        {project.techStack.map((tech, i) => (
+                        {(Array.isArray(project.techStack) ? project.techStack : typeof project.techStack === 'string' ? (project.techStack as string).split(',').map(s => s.trim()).filter(Boolean) : []).map((tech, i) => (
                           <span key={i} className="px-2 py-0.5 bg-white/5 text-[11px] rounded text-gray-300">
                             {tech}
                           </span>

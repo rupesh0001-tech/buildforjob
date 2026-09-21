@@ -243,7 +243,7 @@ export default function RetroTerminalTemplate({ data, settings }: TemplateProps)
                           </div>
                         )}
                         <div className="flex flex-wrap gap-1">
-                          {project.techStack.map((tech, i) => (
+                          {(Array.isArray(project.techStack) ? project.techStack : typeof project.techStack === 'string' ? (project.techStack as string).split(',').map(s => s.trim()).filter(Boolean) : []).map((tech, i) => (
                             <span key={i} className="text-[9px] border px-1 py-0.2 rounded bg-black/60" style={{ borderColor: `${accent}22` }}>
                               {tech}
                             </span>

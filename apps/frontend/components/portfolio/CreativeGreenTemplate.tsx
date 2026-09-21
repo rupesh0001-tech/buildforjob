@@ -298,7 +298,7 @@ export default function CreativeGreenTemplate({ data, settings }: TemplateProps)
                       )}
                       
                       <div className="flex flex-wrap gap-1.5">
-                        {project.techStack.map((tech, i) => (
+                        {(Array.isArray(project.techStack) ? project.techStack : typeof project.techStack === 'string' ? (project.techStack as string).split(',').map(s => s.trim()).filter(Boolean) : []).map((tech, i) => (
                           <span key={i} className="px-2 py-0.5 bg-[#EDF4F0] text-[10px] font-bold text-[#374E41] rounded border border-[#C5DCD0]">
                             {tech}
                           </span>

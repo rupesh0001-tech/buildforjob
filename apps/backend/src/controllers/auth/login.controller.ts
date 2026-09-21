@@ -9,6 +9,12 @@ export async function login(req: Request, res: Response, next: NextFunction) {
 
     const user = await prisma.user.findUnique({
       where: { email },
+      include: {
+        skills: true,
+        experience: true,
+        education: true,
+        projects: true,
+      }
     });
 
     if (!user) {
@@ -59,17 +65,13 @@ export async function login(req: Request, res: Response, next: NextFunction) {
       maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
     });
 
+    const { password: _, ...userWithoutPassword } = user;
+
     return res.json({
       success: true,
       message: 'Login successful',
       data: {
-        user: {
-          id: user.id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          profileSynced: user.profileSynced,
-        }
+        user: userWithoutPassword
       },
     });
   } catch (error) {

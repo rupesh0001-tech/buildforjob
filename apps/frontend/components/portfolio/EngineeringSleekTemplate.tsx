@@ -200,7 +200,7 @@ export default function EngineeringSleekTemplate({ data, settings }: TemplatePro
                       </div>
                     )}
                     <div className="absolute top-4 right-4 flex gap-1.5">
-                      {project.techStack?.slice(0, 2).map((tech, tIdx) => (
+                      {(Array.isArray(project.techStack) ? project.techStack : typeof project.techStack === 'string' ? (project.techStack as string).split(',').map(s => s.trim()).filter(Boolean) : []).slice(0, 2).map((tech, tIdx) => (
                         <span key={tIdx} className="bg-black/75 text-white px-2.5 py-1 rounded font-mono text-[10px] uppercase backdrop-blur-xs font-semibold">
                           {tech}
                         </span>

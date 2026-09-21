@@ -252,7 +252,7 @@ export default function ArchitectTemplate({ data, settings }: TemplateProps) {
                     <h3 className="text-xl font-bold text-gray-900 mb-2">{project.name}</h3>
                     <p className="text-sm text-gray-600 leading-relaxed mb-4">{project.description}</p>
                     <div className="flex flex-wrap gap-2">
-                      {project.techStack?.map((tech, idx) => (
+                      {(Array.isArray(project.techStack) ? project.techStack : typeof project.techStack === 'string' ? (project.techStack as string).split(',').map(s => s.trim()).filter(Boolean) : []).map((tech, idx) => (
                         <span key={idx} className="text-[10px] uppercase font-semibold bg-gray-50 border border-gray-100 px-2 py-0.5 rounded text-gray-500">
                           {tech}
                         </span>

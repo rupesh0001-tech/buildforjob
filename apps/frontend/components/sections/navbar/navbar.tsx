@@ -186,7 +186,6 @@ export function Navbar(props: NavbarProps) {
                   </div>
                 </div>
                 <Link href="/dashboard" onClick={() => toggleMobileMenu(false)} className={cn('text-lg', 'font-medium', 'text-gray-600', 'dark:text-gray-300', 'hover:text-black', 'dark:hover:text-white')}>Dashboard</Link>
-                <Link href="/dashboard/settings/profile" onClick={() => toggleMobileMenu(false)} className={cn('text-lg', 'font-medium', 'text-gray-600', 'dark:text-gray-300', 'hover:text-black', 'dark:hover:text-white')}>Profile Settings</Link>
                 <button onClick={handleLogout} className={cn('text-lg', 'font-medium', 'text-red-500', 'text-left')}>Log Out</button>
               </>
             ) : (

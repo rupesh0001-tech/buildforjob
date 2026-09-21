@@ -11,14 +11,17 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const [mounted, setMounted] = React.useState(false);
-  const [profileFetched, setProfileFetched] = React.useState(!!user);
+
+  // Consider profile fully fetched if user is loaded and has relations (skills array exists)
+  const isProfileCompleteInStore = !!user && Array.isArray(user.skills);
+  const [profileFetched, setProfileFetched] = React.useState(isProfileCompleteInStore);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (user) {
+    if (user && Array.isArray(user.skills)) {
       setProfileFetched(true);
     }
   }, [user]);
@@ -27,7 +30,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     if (mounted) {
       if (!isLoading && !isAuthenticated && !token) {
         router.push("/login");
-      } else if ((token || isAuthenticated) && !user && !profileFetched && !isLoading) {
+      } else if ((token || isAuthenticated) && (!user || !user.skills) && !isLoading) {
         dispatch(fetchProfile())
           .unwrap()
           .then(() => {
@@ -39,14 +42,14 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
           });
       }
     }
-  }, [isAuthenticated, isLoading, token, router, mounted, dispatch, profileFetched, user]);
+  }, [isAuthenticated, isLoading, token, router, mounted, dispatch, user]);
 
   // Don't render anything that depends on client-only state during SSR
   if (!mounted) {
     return null;
   }
 
-  if (!profileFetched && (isAuthenticated || token) && !user) {
+  if (!profileFetched && (isAuthenticated || token) && (!user || !user.skills)) {
     return (
       <div className="h-[60vh] w-full flex items-center justify-center bg-transparent">
         <div className="flex flex-col items-center gap-4 text-center">

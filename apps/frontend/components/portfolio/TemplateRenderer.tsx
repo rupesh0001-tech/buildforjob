@@ -64,6 +64,20 @@ export default function TemplateRenderer({ templateId, data, settings, onSubmitR
     }
   };
 
+  const toSafeArray = (val: any): string[] => {
+    if (!val) return [];
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') return val.split(',').map((s) => s.trim()).filter(Boolean);
+    return [];
+  };
+
+  const rawProjects = Array.isArray(data?.projects) ? data.projects : [];
+  const normalizedProjects = rawProjects.map((proj: any) => ({
+    ...proj,
+    techStack: toSafeArray(proj?.techStack),
+    features: toSafeArray(proj?.features),
+  }));
+
   // Safely construct normalized data to prevent runtime crashes from partial/empty DB fields
   const normalizedData: PortfolioData = {
     personalInfo: {
@@ -83,7 +97,7 @@ export default function TemplateRenderer({ templateId, data, settings, onSubmitR
       paragraphs: data?.aboutMe?.paragraphs || (data?.personalInfo?.bio ? [data.personalInfo.bio] : [])
     },
     techStack: data?.techStack || data?.skills || [],
-    projects: data?.projects || [],
+    projects: normalizedProjects,
     experience: data?.experience || [],
     education: data?.education || [],
     skills: data?.skills || data?.techStack || [],

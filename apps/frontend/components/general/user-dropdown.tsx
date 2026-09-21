@@ -78,14 +78,6 @@ export function UserDropdown() {
                 <User size={18} className="text-blue-500" />
                 My Profile
               </Link>
-              <Link 
-                href="/dashboard/settings"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors"
-              >
-                <Settings size={18} className="text-gray-400" />
-                Settings
-              </Link>
             </div>
             
             <div className="mt-2 pt-2 border-t border-gray-100 dark:border-white/5">

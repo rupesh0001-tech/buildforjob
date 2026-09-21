@@ -157,7 +157,7 @@ export function TestimonialsSection() {
                   drag={isFront ? "x" : false}
                   dragConstraints={{ left: 0, right: 0 }}
                   onDragEnd={isFront ? handleDragEnd : undefined}
-                  whileGrab={{ cursor: "grabbing" }}
+                  whileTap={{ cursor: "grabbing" }}
                   className={`absolute w-full max-w-lg p-6 sm:p-8 rounded-[32px] bg-white dark:bg-[#131024] border border-slate-200/90 dark:border-purple-900/40 shadow-2xl shadow-slate-900/10 dark:shadow-purple-950/50 text-left select-none ${
                     isFront ? "cursor-grab" : "pointer-events-none"
                   }`}

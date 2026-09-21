@@ -19,7 +19,7 @@ export function HeroMockup() {
       <div className={cn('absolute', '-inset-2', 'bg-gradient-to-r', 'from-purple-500/20', 'via-indigo-500/15', 'to-purple-600/20', 'rounded-[32px]', 'blur-2xl', 'opacity-75', '-z-10')} />
 
       {/* Main Glassmorphic Container */}
-      <div className={cn('relative', 'rounded-[24px]', 'bg-white', 'dark:bg-[#0f0d1b]', 'shadow-2xl', 'shadow-purple-900/20', 'overflow-hidden', 'text-left', 'transition-all', 'duration-500', 'hover:shadow-purple-900/30')}>
+      <div className={cn('relative', 'rounded-xs', 'bg-white', 'dark:bg-[#0f0d1b]', 'shadow-2xl', 'shadow-purple-900/20', 'overflow-hidden', 'text-left', 'transition-all', 'duration-500', 'hover:shadow-purple-900/30')}>
         
         {/* Dashboard Image Canvas */}
         <div className={cn('relative', 'w-full', 'aspect-[16/9]', 'bg-gray-50', 'dark:bg-[#0c0a18]', 'overflow-hidden', 'group')}>
