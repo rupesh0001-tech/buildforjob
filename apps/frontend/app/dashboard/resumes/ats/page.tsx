@@ -890,14 +890,6 @@ export default function ATSCheckerPage() {
                   </>
                 )}
               </button>
-
-              {/* Tip */}
-              <p className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1.5 justify-center">
-                <Info size={12} />
-                Uses the{" "}
-                <span className="font-medium">sentence-transformers/all-MiniLM-L6-v2</span>{" "}
-                model via HuggingFace.
-              </p>
             </motion.div>
           ) : (
             /* ── History Panel ── */
