@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { Navbar } from "@/components/sections/navbar/navbar";
-import { FooterSection } from "@/components/sections/footer/footer-section";
 import { ArrowLeft, Home, LayoutDashboard, BookOpen, FileQuestion } from "@/lib/icons";
 
 export default function NotFound() {
@@ -33,9 +31,7 @@ export default function NotFound() {
         <div className="absolute bottom-[-10%] left-[20%] w-[60%] h-[40%] rounded-full bg-indigo-600/10 blur-[120px]" />
       </div>
 
-      <Navbar />
-
-      <main className="relative z-10 pt-32 pb-24 px-6 flex flex-col items-center justify-center flex-grow">
+      <main className="relative z-10 py-16 px-6 flex flex-col items-center justify-center flex-grow">
         <div className="max-w-xl w-full bg-white/70 dark:bg-[#110e20]/80 backdrop-blur-xl border border-slate-200/80 dark:border-purple-900/40 rounded-3xl p-8 sm:p-12 shadow-2xl flex flex-col items-center text-center">
           
           {/* Glowing 404 Icon Badge */}
@@ -86,8 +82,6 @@ export default function NotFound() {
           </div>
         </div>
       </main>
-
-      <FooterSection />
     </div>
   );
 }
