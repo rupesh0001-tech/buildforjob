@@ -26,6 +26,7 @@ model User {
   tokens     Float    @default(5.0)
   lastTokenReset DateTime @default(now())
   plan       Plan     @default(FREE)
+  planExpiresAt DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   isBanned   Boolean  @default(false)
@@ -51,6 +52,7 @@ model User {
   atsReports   AtsReport[]
   userCompanies UserCompany[]
   portfolio    Portfolio?
+  payments     Payment[]
 
   @@map("users")
 }
@@ -297,4 +299,21 @@ model Admin {
 
   @@map("admins")
 }
+
+model Payment {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  razorpayOrderId   String   @unique
+  razorpayPaymentId String?  @unique
+  amount            Int      // in paise
+  currency          String   @default("INR")
+  plan              String   // PRO_MONTHLY | PRO_ANNUAL
+  status            String   @default("CREATED") // CREATED | SUCCESS | FAILED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("payments")
+}
+
 

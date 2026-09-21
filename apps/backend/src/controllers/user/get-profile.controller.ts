@@ -1,12 +1,20 @@
 import type { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/db.config';
 import { checkAndRefreshTokens } from '../../utils/token.utils';
+import { checkAndExpireUserPlan } from '../../utils/plan.utils';
 
 export async function getProfile(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    // Check and downgrade expired subscriptions
+    try {
+      await checkAndExpireUserPlan(userId);
+    } catch (planErr) {
+      console.error("Failed to check plan expiry:", planErr);
     }
 
     // Refresh tokens dynamically if monthly refresh is due
