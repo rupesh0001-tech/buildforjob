@@ -8,7 +8,7 @@ import Education from "./forms/Education";
 import Project from "./forms/Project";
 import Skills from "./forms/Skills";
 import BackFrontBtns from "./forms/BackFrontBtns";
-import ThemeSelector from "./forms/ThemeSelector";
+import { LatexTemplateSelector } from "./forms/LatexTemplateSelector";
 import AccentColorSelector from "./forms/AccentColorSelector";
 import { cn } from "@/lib/utils";
 
@@ -71,7 +71,7 @@ const ResumeForm = () => {
       <div className="flex justify-between items-center w-full mb-6 gap-4 flex-wrap">
         <BackFrontBtns setFormTab={setFormTab} formTab={formTab} />
         <div className="flex gap-3">
-          <ThemeSelector />
+          <LatexTemplateSelector />
           <AccentColorSelector />
         </div>
       </div>

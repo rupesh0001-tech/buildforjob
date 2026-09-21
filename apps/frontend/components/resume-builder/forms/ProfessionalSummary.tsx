@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import { setProfessionalSummary } from "@/lib/store/features/resume-slice";
-import { fetchProfile } from "@/store/slices/authSlice";
+import { deductTokens } from "@/store/slices/authSlice";
 import { generateAI } from "@/apis/ai.api";
 import FormTextArea from "../FormTextArea";
 import { Sparkles, Loader2 } from '@/lib/icons';
@@ -37,8 +37,8 @@ const ProfessionalSummary = ({ setFormTab }: ProfessionalSummaryProps) => {
       dispatch(setProfessionalSummary(result));
       toast.success("Summary enhanced successfully!", { id: toastId });
       
-      // Update profile to show refreshed token count in navbar
-      dispatch(fetchProfile() as any);
+      // Update token balance in store without redundant full-profile network fetch
+      dispatch(deductTokens(0.5));
     } catch (error: any) {
       console.error(error);
       const msg = error.response?.data?.message || "Failed to enhance summary.";

@@ -1,11 +1,12 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import ResumeForm from "@/components/resume-builder/ResumeForm";
-import ResumePreview from "@/components/resume-builder/ResumePreview";
-import { ArrowLeft, Download, Save, Clock, Loader2, Sparkles, Lock } from '@/lib/icons';
+import { ArrowLeft, Download, Save, Clock, Loader2, Sparkles, Lock, Eye, Code2, Copy, Check, FileCode } from '@/lib/icons';
 import Link from "next/link";
 import { OptimizeModal } from "@/components/general/OptimizeModal";
 import { ProPlanModal } from "@/components/general/ProPlanModal";
+import { FREE_TEMPLATES } from "@/components/resume-builder/forms/LatexTemplateSelector";
+import { resumeApi } from "@/apis/resume.api";
 import axiosInstance from "@/apis/axiosInstance";
 import { getErrorMessage } from "@/lib/utils";
 import { toPng } from "html-to-image";
@@ -41,8 +42,16 @@ export default function ResumeBuilderPage() {
   const [showProModal, setShowProModal] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
 
+  // Inline Preview / Code Mode State
+  const [previewMode, setPreviewMode] = useState<"preview" | "code">("preview");
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [latexSource, setLatexSource] = useState<string>("");
+  const [isCompiling, setIsCompiling] = useState(false);
+  const [compileError, setCompileError] = useState<string | null>(null);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+
   const isPro = user?.plan === "PRO";
-  const FREE_TEMPLATES = ["modern", "professional"];
 
   const handleOptimize = async (companyName: string, roles: string[]) => {
     if (!isPro) {
@@ -95,13 +104,80 @@ export default function ResumeBuilderPage() {
         dispatch(fetchResumeById(id));
       }
     } else {
-      dispatch(resetResumeEditor());
+      // If new resume, initialize with user profile data if available
+      if (user && !resumeState.personalInfoData?.full_name) {
+        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email?.split('@')[0] || "Your Name";
+        const starterData = {
+          personalInfoData: {
+            full_name: fullName,
+            email: user.email || "",
+            phone: user.phone || "+1 (555) 000-0000",
+            location: user.location || "San Francisco, CA",
+            linkedin: user.socialLinks?.linkedin || "linkedin.com/in/profile",
+            website: user.socialLinks?.website || user.socialLinks?.github || "github.com/profile",
+            profession: user.jobTitle || "Software Engineer",
+            image: user.avatarUrl || "",
+          },
+          professionalSummaryData: user.bio || "Passionate and results-driven Software Engineer with proven experience in building scalable web applications, distributed backend services, and high-performance cloud infrastructure.",
+          experienceData: (user.experience && user.experience.length > 0) ? user.experience.map((exp: any) => ({
+            company: exp.company,
+            position: exp.position,
+            startDate: exp.startDate || "2022",
+            endDate: exp.endDate || "Present",
+            description: exp.description || "• Led core architecture design and reduced latency by 35%\n• Collaborated with cross-functional teams to deliver critical production features",
+            is_current: exp.isCurrent ?? true,
+          })) : [
+            {
+              company: "Tech Innovations Inc.",
+              position: "Senior Software Engineer",
+              startDate: "2022",
+              endDate: "Present",
+              description: "• Architected distributed backend services processing 10M+ daily events\n• Optimized database query performance by 45% using Redis caching\n• Mentored 5 junior engineers and established CI/CD automated pipelines",
+              is_current: true,
+            }
+          ],
+          educationData: (user.education && user.education.length > 0) ? user.education.map((edu: any) => ({
+            institution: edu.institution,
+            degree: edu.degree,
+            field: edu.field,
+            graduation_date: edu.graduationDate || "2022",
+            gpa: edu.gpa || "3.8",
+            graduationType: (edu.graduationType as any) || "cgpa",
+          })) : [
+            {
+              institution: "University of Technology",
+              degree: "Bachelor of Science",
+              field: "Computer Science",
+              graduation_date: "2022",
+              gpa: "3.8",
+              graduationType: "cgpa"
+            }
+          ],
+          projectData: (user.projects && user.projects.length > 0) ? user.projects.map((p: any) => ({
+            name: p.name,
+            techStack: p.techStack || "TypeScript, React, Node.js",
+            description: p.description || "• Built end-to-end full-stack platform with real-time sync\n• Integrated payment processing with Stripe handling 50k+ transactions",
+          })) : [
+            {
+              name: "CloudScale Platform",
+              techStack: "React, Node.js, PostgreSQL, Docker",
+              description: "• Designed high-availability microservices architecture with 99.99% uptime\n• Implemented automated testing suite with 90%+ code coverage",
+            }
+          ],
+          skillData: (user.skills && user.skills.length > 0) 
+            ? user.skills.map((s: any) => s.name || s) 
+            : ["TypeScript", "JavaScript", "React", "Next.js", "Node.js", "PostgreSQL", "Docker", "Git", "REST APIs"],
+        };
+        dispatch(updateResumeState(starterData as any));
+      } else if (!id && !user && !resumeState.personalInfoData?.full_name) {
+        dispatch(resetResumeEditor());
+      }
       if (titleParam) {
         dispatch(setResumeTitle(titleParam));
         setLocalTitle(titleParam);
       }
     }
-  }, [id, titleParam, dispatch, resumeState.currentResumeId]);
+  }, [id, titleParam, user, dispatch, resumeState.currentResumeId]);
 
   // Sync local title with store title when loaded
   useEffect(() => {
@@ -207,55 +283,146 @@ export default function ResumeBuilderPage() {
     }
   };
 
+  const getResumePayload = useCallback(() => ({
+    personalInfoData: resumeState.personalInfoData,
+    professionalSummaryData: resumeState.professionalSummaryData,
+    experienceData: resumeState.experienceData,
+    educationData: resumeState.educationData,
+    projectData: resumeState.projectData,
+    skillData: resumeState.skillData,
+    template: resumeState.template,
+    accentColor: resumeState.accentColor,
+    sectionVisibility: resumeState.sectionVisibility
+  }), [resumeState]);
+
+  const handleCompile = useCallback(async () => {
+    try {
+      setIsCompiling(true);
+      setCompileError(null);
+      const content = getResumePayload();
+
+      const [blob, source] = await Promise.all([
+        resumeApi.compilePreviewPdf(content, resumeState.template),
+        resumeApi.getLatexSource(content, resumeState.template).catch(() => ""),
+      ]);
+
+      const url = URL.createObjectURL(blob);
+      setPdfBlobUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return url;
+      });
+      setLatexSource(source);
+    } catch (error: any) {
+      console.error("Compilation error:", error);
+      const msg = getErrorMessage(error, "Failed to compile document. Please check your fields.");
+      setCompileError(msg);
+      toast.error(msg);
+    } finally {
+      setIsCompiling(false);
+    }
+  }, [getResumePayload, resumeState.template]);
+
+  // Initial compilation when builder is loaded or template/data changes
+  useEffect(() => {
+    if (!resumeState.isLoading) {
+      const timer = setTimeout(() => {
+        handleCompile();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    handleCompile,
+    resumeState.isLoading,
+    resumeState.template,
+    resumeState.currentResumeId,
+    resumeState.personalInfoData?.full_name,
+    resumeState.experienceData?.length,
+    resumeState.skillData?.length,
+  ]);
+
+  const handleToggleMode = (mode: "preview" | "code") => {
+    setPreviewMode(mode);
+    if (!latexSource) {
+      handleCompile();
+    }
+  };
+
+  const handleCopyCode = async () => {
+    if (!latexSource) return;
+    try {
+      await navigator.clipboard.writeText(latexSource);
+      setCopiedCode(true);
+      toast.success("Code copied to clipboard!");
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch (err) {
+      toast.error("Failed to copy code");
+    }
+  };
+
+  const handleDownloadTex = () => {
+    if (!latexSource) return;
+    const blob = new Blob([latexSource], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${localTitle.replace(/\s+/g, '_')}.tex`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Source code (.tex) downloaded!");
+  };
+
   const handleDownload = async () => {
     if (!isPro && !FREE_TEMPLATES.includes(resumeState.template)) {
       setShowProModal(true);
       return;
     }
-    const element = document.getElementById("resume-preview");
-    if (!element) return;
 
     try {
-      const dataUrl = await toPng(element, {
-        quality: 1,
-        pixelRatio: 2,
-      });
+      setIsDownloadingPdf(true);
+      const content = getResumePayload();
       
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (pdf.internal.pageSize.getHeight());
-
-      pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
-
-      // Capture all anchor tags in the preview DOM and overlay PDF links
-      const containerRect = element.getBoundingClientRect();
-      const scaleX = pdfWidth / containerRect.width;
-      const scaleY = pdfHeight / containerRect.height;
-      
-      const links = element.getElementsByTagName("a");
-      for (let i = 0; i < links.length; i++) {
-        const link = links[i];
-        const href = link.getAttribute("href");
-        if (href) {
-          const rect = link.getBoundingClientRect();
-          const x = (rect.left - containerRect.left) * scaleX;
-          const y = (rect.top - containerRect.top) * scaleY;
-          const w = rect.width * scaleX;
-          const h = rect.height * scaleY;
-          pdf.link(x, y, w, h, { url: href });
-        }
+      let blob: Blob;
+      if (resumeState.currentResumeId) {
+        blob = await resumeApi.exportPdf(resumeState.currentResumeId, resumeState.template);
+      } else {
+        blob = await resumeApi.compilePreviewPdf(content, resumeState.template);
       }
 
-      pdf.save(`${localTitle.replace(/\s+/g, '_')}.pdf`);
-    } catch (error) {
-      console.error("Error generating PDF:", error);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${localTitle.replace(/\s+/g, '_')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("PDF downloaded successfully!");
+    } catch (error: any) {
+      console.warn("Server PDF compile failed, falling back to client PDF:", error);
+      const element = document.getElementById("resume-preview");
+      if (!element) {
+        toast.error("Failed to generate PDF download");
+        return;
+      }
+      try {
+        const dataUrl = await toPng(element, { quality: 1, pixelRatio: 2 });
+        const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
+        pdf.save(`${localTitle.replace(/\s+/g, '_')}.pdf`);
+        toast.success("PDF downloaded!");
+      } catch (fallbackErr) {
+        toast.error("Failed to generate PDF download");
+      }
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
+
+  const codeLines = latexSource ? latexSource.split("\n") : [];
 
   if (resumeState.isLoading) {
     return (
@@ -293,7 +460,7 @@ export default function ResumeBuilderPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3 w-full md:w-auto flex-wrap">
           <button
             type="button"
             onClick={() => {
@@ -303,7 +470,7 @@ export default function ResumeBuilderPage() {
               }
               setShowOptimizeModal(true);
             }}
-            className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold font-sans text-sm transition-all shadow-sm shadow-purple-500/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold font-sans text-sm transition-all shadow-sm shadow-purple-500/20"
           >
             <Sparkles size={16} />
             Optimize
@@ -317,7 +484,7 @@ export default function ResumeBuilderPage() {
           <button
             onClick={() => handleSave(false)}
             disabled={isSaving}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl font-semibold font-sans text-sm hover:bg-gray-50 dark:hover:bg-white/10 transition-all shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-white/5 border border-gray-300 dark:border-white/10 rounded-xl font-semibold font-sans text-sm hover:bg-gray-50 dark:hover:bg-white/10 transition-all shadow-sm"
           >
             {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
             Save
@@ -325,9 +492,10 @@ export default function ResumeBuilderPage() {
 
           <button
             onClick={handleDownload}
-            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-semibold font-sans text-sm hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/25"
+            disabled={isDownloadingPdf}
+            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-primary text-white rounded-xl font-semibold font-sans text-sm hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/25 disabled:opacity-75"
           >
-            <Download size={18} />
+            {isDownloadingPdf ? <Loader2 size={18} className="animate-spin" /> : <Download size={18} />}
             Download PDF
           </button>
         </div>
@@ -339,10 +507,154 @@ export default function ResumeBuilderPage() {
           <ResumeForm />
         </div>
 
-        {/* Preview Section */}
-        <div className="w-fit bg-gray-50/50 dark:bg-black/20 rounded-3xl border border-gray-200 dark:border-white/10 h-full p-0 overflow-hidden flex flex-col">
-          <div className="h-full overflow-y-auto custom-scrollbar p-2 md:p-4 shadow-2xl">
-             <ResumePreview />
+        {/* Preview / Code Section */}
+        <div className="w-full lg:w-auto flex flex-col items-center">
+          {/* Inline Toolbar */}
+          <div className="w-full max-w-[794px] flex items-center justify-between mb-3 px-1 flex-wrap gap-2">
+            <div className="flex items-center bg-gray-100 dark:bg-white/10 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => handleToggleMode("preview")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  previewMode === "preview"
+                    ? "bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <Eye size={13} />
+                <span>Preview</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleMode("code")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  previewMode === "code"
+                    ? "bg-white dark:bg-slate-800 text-gray-900 dark:text-white shadow-sm"
+                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                }`}
+              >
+                <Code2 size={13} />
+                <span>Code</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCompile}
+                disabled={isCompiling}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#001BB7] hover:bg-[#001BB7]/90 text-white rounded-xl text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+              >
+                <Loader2 size={13} className={isCompiling ? "animate-spin" : "hidden"} />
+                {!isCompiling && <Sparkles size={13} />}
+                <span>{isCompiling ? "Compiling..." : "Compile"}</span>
+              </button>
+
+              {previewMode === "code" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    disabled={!latexSource || isCompiling}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-white/10 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-semibold text-gray-800 dark:text-white hover:bg-gray-50 dark:hover:bg-white/20 transition-all shadow-sm"
+                  >
+                    {copiedCode ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                    <span>{copiedCode ? "Copied!" : "Copy Code"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadTex}
+                    disabled={!latexSource}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-xl text-xs font-semibold hover:brightness-110 transition-all shadow-sm"
+                  >
+                    <Download size={13} />
+                    <span>.tex</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Main Card */}
+          <div className="w-fit bg-gray-50/50 dark:bg-black/20 rounded-3xl border border-gray-200 dark:border-white/10 p-0 overflow-hidden flex flex-col shadow-2xl">
+            {previewMode === "preview" ? (
+              pdfBlobUrl ? (
+                <div className="w-[794px] h-[1123px] bg-white rounded-2xl overflow-hidden relative shadow-inner">
+                  {isCompiling && (
+                    <div className="absolute inset-0 bg-white/60 dark:bg-black/60 backdrop-blur-xs z-10 flex flex-col items-center justify-center gap-2">
+                      <Loader2 size={24} className="animate-spin text-[#001BB7]" />
+                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">Recompiling PDF...</p>
+                    </div>
+                  )}
+                  <iframe
+                    src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                    className="w-full h-full border-0"
+                    title="Resume PDF Preview"
+                  />
+                </div>
+              ) : isCompiling ? (
+                <div className="w-[794px] h-[1123px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8">
+                  <Loader2 className="animate-spin text-[#001BB7]" size={36} />
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">Compiling PDF...</h4>
+                    <p className="text-xs text-gray-500 max-w-sm">Generating vector ATS document with high-precision formatting.</p>
+                  </div>
+                </div>
+              ) : compileError ? (
+                <div className="w-[794px] h-[600px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8">
+                  <div className="text-red-500 font-bold text-sm">Compilation Failed</div>
+                  <p className="text-xs text-gray-500 max-w-md">{compileError}</p>
+                  <button
+                    onClick={handleCompile}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-all"
+                  >
+                    Retry Compile
+                  </button>
+                </div>
+              ) : (
+                <div className="w-[794px] h-[1123px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8">
+                  <Loader2 className="animate-spin text-[#001BB7]" size={36} />
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-gray-900 dark:text-white">Generating Resume Preview...</h4>
+                    <p className="text-xs text-gray-500 max-w-sm">Compiling ATS-optimized document.</p>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="w-[794px] min-h-[600px] max-h-[850px] bg-[#0f0f15] flex flex-col text-xs font-mono">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-[#171722] border-b border-white/5 text-[11px] text-gray-400 select-none">
+                  <span className="flex items-center gap-1.5 text-gray-300 font-sans">
+                    <FileCode size={14} className="text-blue-400" />
+                    Source Code
+                  </span>
+                  <span className="text-gray-500 font-sans">Read-Only</span>
+                </div>
+                <div className="flex-1 overflow-auto p-4 custom-scrollbar select-text">
+                  {isCompiling && !latexSource ? (
+                    <div className="flex flex-col items-center justify-center py-24 text-gray-400 gap-3">
+                      <Loader2 className="animate-spin text-blue-500" size={24} />
+                      <p className="text-xs font-sans">Generating source code...</p>
+                    </div>
+                  ) : (
+                    <table className="w-full border-collapse">
+                      <tbody>
+                        {codeLines.map((line, idx) => (
+                          <tr key={idx} className="hover:bg-white/5">
+                            <td className="w-10 pr-3 text-right text-gray-600 select-none align-top font-mono text-[11px]">
+                              {idx + 1}
+                            </td>
+                            <td className="text-gray-200 whitespace-pre font-mono text-xs leading-relaxed">
+                              {line || " "}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -53,6 +53,7 @@ model User {
   userCompanies UserCompany[]
   portfolio    Portfolio?
   payments     Payment[]
+  resumeExports ResumeExport[]
 
   @@map("users")
 }
@@ -72,8 +73,26 @@ model Resume {
 
   versions            ResumeVersion[]
   applicationVersions ApplicationVersion[]
+  exports             ResumeExport[]
 
   @@map("resumes")
+}
+
+model ResumeExport {
+  id          String   @id @default(uuid())
+  resumeId    String
+  resume      Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  templateId  String
+  status      String   @default("COMPLETED") // QUEUED, PROCESSING, COMPLETED, FAILED
+  pdfUrl      String?
+  filePath    String?
+  error       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("resume_exports")
 }
 
 model ResumeVersion {

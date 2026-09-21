@@ -8,12 +8,22 @@ export async function updateResume(req: Request, res: Response, next: NextFuncti
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
     if (!id) return res.status(400).json({ success: false, message: 'Missing resume ID' });
 
+    const { title, company, template, content, isDraft, isMagic } = req.body;
+
+    const dataToUpdate: any = {
+      updatedAt: new Date(),
+    };
+
+    if (title !== undefined) dataToUpdate.title = title;
+    if (company !== undefined) dataToUpdate.company = company;
+    if (template !== undefined) dataToUpdate.template = template;
+    if (content !== undefined) dataToUpdate.content = content;
+    if (isDraft !== undefined) dataToUpdate.isDraft = Boolean(isDraft);
+    if (isMagic !== undefined) dataToUpdate.isMagic = Boolean(isMagic);
+
     const resume = await prisma.resume.update({
       where: { id, userId },
-      data: {
-        ...req.body,
-        updatedAt: new Date(),
-      }
+      data: dataToUpdate,
     });
 
     return res.json({

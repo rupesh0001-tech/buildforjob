@@ -10,7 +10,7 @@ import { FileSignature, Layers, Trash2, Plus, Code, Sparkles, Loader2 } from '@/
 import { generateAI } from "@/apis/ai.api";
 import { toast } from "sonner";
 import { Edit } from "lucide-react";
-import { fetchProfile } from "@/store/slices/authSlice";
+import { deductTokens } from "@/store/slices/authSlice";
 
 interface ProjectProps {
   setFormTab: (tab: number) => void;
@@ -85,7 +85,7 @@ const Project = ({ setFormTab }: ProjectProps) => {
       const result = await generateAI(prompt, 'project');
       setFormData(prev => ({ ...prev, description: result }));
       toast.success("Description enhanced successfully!", { id: toastId });
-      dispatch(fetchProfile() as any);
+      dispatch(deductTokens(0.5));
     } catch (error: any) {
       console.error(error);
       const msg = error.response?.data?.message || "Failed to enhance description.";

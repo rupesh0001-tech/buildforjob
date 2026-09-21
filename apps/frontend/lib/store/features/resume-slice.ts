@@ -63,6 +63,11 @@ export interface ResumeState {
   resumeTitle: string;
   isLoading: boolean;
   error: string | null;
+
+  // LaTeX PDF Export State
+  isCompilingPdf: boolean;
+  pdfBlobUrl: string | null;
+  exportError: string | null;
 }
 
 const initialState: ResumeState = {
@@ -81,8 +86,8 @@ const initialState: ResumeState = {
   educationData: [],
   projectData: [],
   skillData: [],
-  template: "professional",
-  accentColor: "#4E61D3",
+  template: "latex-jake",
+  accentColor: "#0E5484",
   sectionVisibility: {
     summary: true,
     experience: true,
@@ -95,9 +100,16 @@ const initialState: ResumeState = {
   resumeTitle: "Untitled Resume",
   isLoading: false,
   error: null,
+  isCompilingPdf: false,
+  pdfBlobUrl: null,
+  exportError: null,
 };
 
-export const fetchAllResumes = createAsyncThunk(
+export const fetchAllResumes = createAsyncThunk<
+  Resume[],
+  void,
+  { state: { resume: ResumeState } }
+>(
   'resume/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
@@ -105,6 +117,15 @@ export const fetchAllResumes = createAsyncThunk(
       return response.data;
     } catch (error: unknown) {
       return rejectWithValue(getErrorMessage(error, 'Failed to fetch resumes'));
+    }
+  },
+  {
+    condition: (_, { getState }) => {
+      const state = getState();
+      if (state.resume?.isLoading) {
+        return false;
+      }
+      return true;
     }
   }
 );
