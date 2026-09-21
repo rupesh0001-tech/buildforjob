@@ -53,17 +53,6 @@ export function Sidebar({ isOpen, onClose, isOverlay }: SidebarProps) {
         ]
       },
       {
-        title: "Plans",
-        items: [
-          { 
-            name: "Plans", 
-            href: "/dashboard/plans", 
-            icon: Sparkles,
-            badge: planBadge
-          },
-        ]
-      },
-      {
         title: "Resumes",
         items: [
           { name: "ATS Checker", href: "/dashboard/resumes/ats", icon: FileCheck },
@@ -108,6 +97,17 @@ export function Sidebar({ isOpen, onClose, isOverlay }: SidebarProps) {
         items: [
           { name: "LinkedIn Enhancer", href: "#", icon: TrendingUp, isComingSoon: true },
           { name: "LinkedIn Connector", href: "#", icon: Briefcase, isComingSoon: true },
+        ]
+      },
+      {
+        title: "Plans",
+        items: [
+          { 
+            name: "Plans", 
+            href: "/dashboard/plans", 
+            icon: Sparkles,
+            badge: planBadge
+          },
         ]
       }
     ];
