@@ -12,20 +12,20 @@ export function SidebarUser() {
     setMounted(true);
   }, []);
 
-  const name = mounted && user?.firstName && user?.lastName 
-    ? `${user.firstName} ${user.lastName}` 
-    : mounted && user?.email 
-      ? user.email 
-      : "Jane Doe";
+  const name = mounted && user?.firstName
+    ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}`
+    : mounted && user?.email
+      ? user.email
+      : "User";
 
-  const initials = mounted && user?.firstName && user?.lastName 
-    ? `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase() 
-    : mounted && user?.email 
-      ? user.email.substring(0, 2).toUpperCase() 
-      : "JD";
+  const initials = mounted && user?.firstName
+    ? `${user.firstName.charAt(0)}${user.lastName ? user.lastName.charAt(0) : ''}`.toUpperCase()
+    : mounted && user?.email
+      ? user.email.substring(0, 2).toUpperCase()
+      : "U";
 
   const isPro = mounted && user?.plan === "PRO";
-  const subtext = mounted && (user?.jobTitle || (isPro ? "Pro Plan" : "Free Plan")) || "Free Plan";
+  const subtext = isPro ? "Pro Plan" : "Free Plan";
   const avatarUrl = mounted ? user?.avatarUrl : null;
 
   return (
@@ -44,7 +44,7 @@ export function SidebarUser() {
          )}
          <div className="flex flex-col flex-1 min-w-0">
             <span className="text-sm font-medium text-black dark:text-white truncate">{name}</span>
-            <span className="text-xs text-gray-700 truncate">{subtext}</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{subtext}</span>
          </div>
       </Link>
     </div>

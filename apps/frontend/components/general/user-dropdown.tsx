@@ -54,7 +54,7 @@ export function UserDropdown() {
           >
             <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5 mb-2 text-left">
               <p className="text-sm font-bold text-black dark:text-white truncate">
-                {user?.firstName} {user?.lastName}
+                {user?.firstName ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ''}` : (user?.email || 'User')}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {user?.email}
