@@ -12,6 +12,20 @@ export async function unlockReportSuggestions(req: Request, res: Response, next:
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true }
+    });
+
+    if (user?.plan !== 'PRO') {
+      return res.status(403).json({
+        success: false,
+        requiresPro: true,
+        code: 'PRO_REQUIRED',
+        message: 'Detailed ATS analysis and AI suggestions are only available on the Pro plan.'
+      });
+    }
+
     const report = await prisma.atsReport.findFirst({
       where: { id, userId },
     });

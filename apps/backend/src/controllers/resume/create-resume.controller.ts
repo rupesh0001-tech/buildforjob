@@ -6,6 +6,23 @@ export async function createResume(req: Request, res: Response, next: NextFuncti
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true }
+    });
+
+    if (user?.plan !== 'PRO') {
+      const resumeCount = await prisma.resume.count({ where: { userId } });
+      if (resumeCount >= 3) {
+        return res.status(403).json({
+          success: false,
+          requiresPro: true,
+          code: 'RESUME_LIMIT_REACHED',
+          message: 'Free plan is limited to a maximum of 3 resumes. Upgrade to Pro for unlimited resumes!'
+        });
+      }
+    }
+
     const { title, template, content, isDraft, isMagic } = req.body;
 
     let finalTitle = title;

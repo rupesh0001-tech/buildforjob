@@ -18,6 +18,23 @@ export async function createVersion(req: Request, res: Response, next: NextFunct
       return res.status(404).json({ success: false, message: 'Resume not found or unauthorized' });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true }
+    });
+
+    if (user?.plan !== 'PRO') {
+      const versionCount = await prisma.resumeVersion.count({ where: { resumeId: id } });
+      if (versionCount >= 3) {
+        return res.status(403).json({
+          success: false,
+          requiresPro: true,
+          code: 'VERSION_LIMIT_REACHED',
+          message: 'Free plan is limited to 3 versions per document. Upgrade to Pro for unlimited version tracking!'
+        });
+      }
+    }
+
     const version = await prisma.resumeVersion.create({
       data: {
         resumeId: id,

@@ -8,6 +8,23 @@ export async function createCoverLetter(req: Request, res: Response, next: NextF
       return res.status(401).json({ error: "Unauthorized" });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true }
+    });
+
+    if (user?.plan !== 'PRO') {
+      const count = await prisma.coverLetter.count({ where: { userId } });
+      if (count >= 3) {
+        return res.status(403).json({
+          success: false,
+          requiresPro: true,
+          code: 'COVER_LETTER_LIMIT_REACHED',
+          message: 'Free plan is limited to a maximum of 3 cover letters. Upgrade to Pro for unlimited cover letters!'
+        });
+      }
+    }
+
     const coverLetter = await prisma.coverLetter.create({
       data: {
         ...req.body,

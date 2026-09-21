@@ -57,6 +57,20 @@ export async function generateJobDescription(req: Request, res: Response, next: 
       return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true }
+    });
+
+    if (user?.plan !== 'PRO') {
+      return res.status(403).json({
+        success: false,
+        requiresPro: true,
+        code: 'PRO_REQUIRED',
+        message: 'ATS Auto-Fill is only available on the Pro plan.'
+      });
+    }
+
     const { companyName, roles } = req.body;
     if (!roles || !Array.isArray(roles) || roles.length === 0) {
       return res.status(400).json({ success: false, message: 'At least one role must be selected' });
@@ -129,6 +143,20 @@ export async function optimizeResume(req: Request, res: Response, next: NextFunc
     const userId = req.user?.userId;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true }
+    });
+
+    if (user?.plan !== 'PRO') {
+      return res.status(403).json({
+        success: false,
+        requiresPro: true,
+        code: 'PRO_REQUIRED',
+        message: 'Resume Optimization is only available on the Pro plan.'
+      });
     }
 
     const { resumeId, content, companyName, roles } = req.body;
@@ -255,6 +283,20 @@ export async function optimizeCoverLetter(req: Request, res: Response, next: Nex
     const userId = req.user?.userId;
     if (!userId) {
       return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true }
+    });
+
+    if (user?.plan !== 'PRO') {
+      return res.status(403).json({
+        success: false,
+        requiresPro: true,
+        code: 'PRO_REQUIRED',
+        message: 'Cover Letter Optimization is only available on the Pro plan.'
+      });
     }
 
     const { coverLetterId, content, companyName, roles } = req.body;

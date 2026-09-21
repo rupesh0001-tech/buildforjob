@@ -3,12 +3,7 @@ import crypto from 'crypto';
 import Razorpay from 'razorpay';
 import prisma from '../../config/db.config';
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    userId: string;
-    email: string;
-  };
-}
+
 
 
 const getRazorpayInstance = () => {
@@ -25,7 +20,7 @@ const getRazorpayInstance = () => {
   });
 };
 
-export async function createOrder(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+export async function createOrder(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId;
     if (!userId) {
@@ -37,8 +32,6 @@ export async function createOrder(req: AuthenticatedRequest, res: Response, next
     let amount = 200; // Special Discount ₹2 (200 paise)
     if (plan === 'PRO_ANNUAL') {
       amount = 200; // Special Discount ₹2
-    } else if (plan === 'SINGLE_ATS') {
-      amount = 200; // ₹2
     }
 
     const razorpay = getRazorpayInstance();
@@ -67,7 +60,7 @@ export async function createOrder(req: AuthenticatedRequest, res: Response, next
   }
 }
 
-export async function verifyPayment(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+export async function verifyPayment(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId;
     if (!userId) {
@@ -94,28 +87,19 @@ export async function verifyPayment(req: AuthenticatedRequest, res: Response, ne
       return res.status(400).json({ success: false, message: 'Invalid payment signature' });
     }
 
-    // Payment signature is valid! Upgrade user plan or tokens in database
-    if (plan === 'SINGLE_ATS') {
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          tokens: { increment: 1.0 },
-        },
-      });
-    } else {
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          plan: 'PRO',
-          tokens: 50.0,
-        },
-      });
-    }
+    // Payment signature is valid! Upgrade user plan and tokens in database
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        plan: 'PRO',
+        tokens: 50.0,
+      },
+    });
 
     return res.json({
       success: true,
-      message: 'Payment successfully verified! Your account has been upgraded.',
-      data: { plan: plan === 'SINGLE_ATS' ? 'SINGLE_ATS' : 'PRO' },
+      message: 'Payment successfully verified! Your account has been upgraded to PRO.',
+      data: { plan: 'PRO' },
     });
   } catch (error) {
     next(error);

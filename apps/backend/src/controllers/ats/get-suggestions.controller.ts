@@ -14,6 +14,20 @@ export async function getSuggestions(req: Request, res: Response, next: NextFunc
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true }
+    });
+
+    if (user?.plan !== 'PRO') {
+      return res.status(403).json({
+        success: false,
+        requiresPro: true,
+        code: 'PRO_REQUIRED',
+        message: 'Detailed ATS analysis and AI suggestions are only available on the Pro plan.'
+      });
+    }
+
     // Deduct 0.5 tokens for AI Suggestions generation (excluding main ATS check)
     try {
       await deductTokens(userId, 0.5);

@@ -14,6 +14,41 @@ export async function checkATS(req: Request, res: Response, next: NextFunction) 
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true }
+    });
+
+    const isPro = user?.plan === 'PRO';
+
+    if (!isPro) {
+      const lifetimeScans = await prisma.atsReport.count({ where: { userId } });
+      if (lifetimeScans >= 5) {
+        return res.status(403).json({
+          success: false,
+          requiresPro: true,
+          code: 'ATS_LIMIT_REACHED',
+          message: 'You have reached your limit of 5 ATS scans on the Free plan. Upgrade to Pro for 50 scans monthly!'
+        });
+      }
+    } else {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const monthlyScans = await prisma.atsReport.count({
+        where: {
+          userId,
+          createdAt: { gte: thirtyDaysAgo }
+        }
+      });
+      if (monthlyScans >= 50) {
+        return res.status(403).json({
+          success: false,
+          code: 'MONTHLY_LIMIT_REACHED',
+          message: 'You have reached your limit of 50 ATS scans for this month.'
+        });
+      }
+    }
+
     // Deduct 1 token for an ATS scan
     try {
       await deductTokens(userId, 1.0);

@@ -19,6 +19,25 @@ export async function createVersion(req: Request, res: Response, next: NextFunct
       return res.status(400).json({ message: "Resume file, project, or existing URL is required" });
     }
 
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true }
+    });
+
+    if (user?.plan !== 'PRO' && resumeId) {
+      const vCount = await prisma.applicationVersion.count({
+        where: { userId, resumeId }
+      });
+      if (vCount >= 3) {
+        return res.status(403).json({
+          success: false,
+          requiresPro: true,
+          code: 'VERSION_LIMIT_REACHED',
+          message: 'Free plan is limited to 3 versions per document. Upgrade to Pro for unlimited version tracking!'
+        });
+      }
+    }
+
     let finalResumeUrl = resumeUrl;
     if (resumeFile) {
       const resumeUpload = await uploadToImageKit(

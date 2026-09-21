@@ -15,7 +15,7 @@ router.use(authenticateJWT);
 router.use(aiRateLimiter);
 
 router.post('/generate', generateAIContent);
-router.post('/generate-jd', generateJobDescription);
+router.post('/generate-jd', requirePro, generateJobDescription);
 router.post('/optimize-resume', requirePro, optimizeResume);
 router.post('/optimize-cover-letter', requirePro, optimizeCoverLetter);
 

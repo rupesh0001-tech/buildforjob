@@ -17,7 +17,7 @@ export interface VerifyPaymentRequest {
 }
 
 export const paymentApi = {
-  createOrder: async (plan: 'PRO_MONTHLY' | 'PRO_ANNUAL' | 'SINGLE_ATS') => {
+  createOrder: async (plan: 'PRO_MONTHLY' | 'PRO_ANNUAL') => {
     const response = await api.post<CreateOrderResponse>('/payment/create-order', { plan });
     return response.data;
   },
