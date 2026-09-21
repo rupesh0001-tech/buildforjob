@@ -32,10 +32,10 @@ export async function createOrder(req: Request, res: Response, next: NextFunctio
 
     // Pricing:
     // PRO_MONTHLY: ₹2 (200 paise) for 1 month
-    // PRO_ANNUAL: ₹2 (200 paise) for 6 months (Launch introductory offer, then regular ₹199/month)
-    let amount = 200; // 200 paise = ₹2
+    // PRO_ANNUAL: ₹2/month for first 6 months (₹12) + ₹199/month for next 6 months (₹1,194) = ₹1,206 (120600 paise) for 1 year (365 days)
+    let amount = 200; // 200 paise = ₹2 for monthly
     if (plan === 'PRO_ANNUAL') {
-      amount = 200; // Special 6-month launch discount
+      amount = 120600; // ₹1,206 = (6 * 2) + (6 * 199)
     }
 
     const razorpay = getRazorpayInstance();
@@ -151,7 +151,7 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
     const baseDate = (currentUser?.plan === 'PRO' && currentUser.planExpiresAt && currentUser.planExpiresAt > now)
       ? new Date(currentUser.planExpiresAt)
       : now;
-    const durationDays = existingPayment.plan === 'PRO_ANNUAL' ? 180 : 30;
+    const durationDays = existingPayment.plan === 'PRO_ANNUAL' ? 365 : 30;
     const planExpiresAt = new Date(baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
     // 6. Update user's plan and expiry date in database
@@ -175,7 +175,7 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
 
     return res.json({
       success: true,
-      message: `Payment successfully verified! Your account is upgraded to PRO for ${existingPayment.plan === 'PRO_ANNUAL' ? '6 months' : '1 month'}.`,
+      message: `Payment successfully verified! Your account is upgraded to PRO for ${existingPayment.plan === 'PRO_ANNUAL' ? '1 year (Annual Plan)' : '1 month'}.`,
       data: {
         plan: 'PRO',
         planExpiresAt,

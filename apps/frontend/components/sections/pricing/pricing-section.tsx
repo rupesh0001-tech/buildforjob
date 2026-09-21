@@ -138,7 +138,7 @@ export function PricingSection() {
             onClick={() => setIsAnnual(true)}
             className={`px-6 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${isAnnual ? 'bg-white dark:bg-black text-black dark:text-white shadow-xs' : 'text-gray-500 hover:text-black dark:hover:text-white'}`}
           >
-            6 Months <span className="text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Special</span>
+            Annual (1 Year) <span className="text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Special</span>
           </button>
         </div>
       </motion.div>
@@ -204,12 +204,20 @@ export function PricingSection() {
             <p className="text-gray-400 text-sm mb-6 font-medium">Everything you need to land your dream job</p>
             <div className="mb-6">
               <div className="flex items-baseline gap-2.5">
-                <span className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">₹2</span>
-                <span className="text-gray-400 line-through text-lg">₹{isAnnual ? '199/mo' : '299'}</span>
-                <span className="text-gray-400 text-sm font-medium">/ {isAnnual ? '6 months' : '1 month'}</span>
+                <span className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
+                  {isAnnual ? '₹1,206' : '₹2'}
+                </span>
+                <span className="text-gray-400 line-through text-lg">
+                  {isAnnual ? '₹2,388' : '₹299'}
+                </span>
+                <span className="text-gray-400 text-sm font-medium">
+                  / {isAnnual ? '1 year' : '1 month'}
+                </span>
               </div>
               <div className="mt-3 inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-500/30">
-                {isAnnual ? "🔥 Launch Offer: ₹2 for 6 months, then regular ₹199/mo" : "🔥 Special Launch Discount: ₹2 for 1 month"}
+                {isAnnual 
+                  ? "🔥 ₹2/mo for first 6 months (₹12) + ₹199/mo for next 6 months (₹1,194)" 
+                  : "🔥 Special Launch Discount: ₹2 for 1 month"}
               </div>
             </div>
             <button
@@ -239,7 +247,7 @@ export function PricingSection() {
                   <span>You&apos;re already a Pro user</span>
                 </div>
               ) : (
-                "Upgrade to Pro"
+                isAnnual ? "Subscribe Annually · ₹1,206" : "Upgrade to Pro · ₹2"
               )}
             </button>
             <ul className="space-y-4 mb-4">

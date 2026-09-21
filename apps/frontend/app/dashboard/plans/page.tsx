@@ -69,7 +69,7 @@ export default function PlansPage() {
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'BuildForJob',
-        description: planType === 'PRO_ANNUAL' ? 'Pro Plan (6 Months Launch Offer)' : 'Pro Plan (1 Month)',
+        description: planType === 'PRO_ANNUAL' ? 'Pro Plan (1 Year Annual Subscription · ₹1,206)' : 'Pro Plan (1 Month · ₹2)',
         image: '/favicon.png',
         order_id: orderData.orderId,
         prefill: {
@@ -127,53 +127,47 @@ export default function PlansPage() {
   const daysLeft = getDaysLeft();
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20">
+    <div className="max-w-5xl mx-auto space-y-10 pb-16 animate-in fade-in duration-500">
       {/* Header */}
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-          Subscription & Plans
+        <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+          Plans &amp; Billing
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Manage your account tier, check validity, and unlock unlimited career tools.
+          Choose a plan that fits your career goals. Upgrade, extend, or review your invoices.
         </p>
       </div>
 
-      {/* Current Plan Overview Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-black/40 border border-gray-200 dark:border-white/10 shadow-sm backdrop-blur-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-        
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white ${
+      {/* Current Subscription Status Card */}
+      <div className="p-6 rounded-3xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent border border-blue-500/20 shadow-sm relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
                 isPro 
-                  ? "bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25" 
-                  : "bg-gray-700 dark:bg-white/10"
+                  ? "bg-blue-600 text-white shadow-xs" 
+                  : "bg-gray-200 dark:bg-white/10 text-gray-600 dark:text-gray-300"
               }`}>
-                {isPro ? <Crown size={24} /> : <ShieldCheck size={24} />}
+                {isPro ? <Crown size={16} /> : <ShieldCheck size={16} />}
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {isPro ? "Pro Plan" : "Free Plan"}
-                  </h2>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                    isPro 
-                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" 
-                      : "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400"
-                  }`}>
-                    Active
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                  {isPro 
-                    ? "Full access to 50 monthly ATS scans, AI tailoring, and premium templates." 
-                    : "Basic access with 5 lifetime ATS scans, 3 resumes & 3 cover letters."}
-                </p>
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">
+                  Current Status
+                </span>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">
+                  {isPro ? "Pro Plan Active" : "Free Plan (Starter)"}
+                </h2>
               </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ml-1 ${
+                isPro
+                  ? "bg-blue-600 text-white shadow-xs"
+                  : "bg-gray-200 dark:bg-white/10 text-gray-700 dark:text-gray-300"
+              }`}>
+                {isPro ? "PRO" : "FREE"}
+              </span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4 pt-2 text-xs">
+            <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-xs pt-1">
               <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
                 <Clock size={15} className="text-blue-500" />
                 <span className="font-medium">Validity:</span>
@@ -200,33 +194,6 @@ export default function PlansPage() {
                 </span>
               </div>
             </div>
-          </div>
-
-          <div className="shrink-0 flex items-center gap-3">
-            <button
-              onClick={() => handleSubscribe('PRO_MONTHLY')}
-              disabled={!!loadingPlan}
-              className="px-5 py-3 rounded-xl bg-[#001BB7] hover:bg-[#0020d4] text-white font-semibold text-xs transition-all shadow-md shadow-blue-600/20 cursor-pointer flex items-center gap-2 disabled:opacity-50"
-            >
-              {loadingPlan === 'PRO_MONTHLY' ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Sparkles size={14} />
-              )}
-              <span>{isPro ? "Extend 1 Month (₹2)" : "Upgrade 1 Month (₹2)"}</span>
-            </button>
-            <button
-              onClick={() => handleSubscribe('PRO_ANNUAL')}
-              disabled={!!loadingPlan}
-              className="px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/20 cursor-pointer flex items-center gap-2 disabled:opacity-50"
-            >
-              {loadingPlan === 'PRO_ANNUAL' ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Crown size={14} />
-              )}
-              <span>6-Month Offer (₹2)</span>
-            </button>
           </div>
         </div>
       </div>
@@ -267,19 +234,19 @@ export default function PlansPage() {
               </li>
               <li className="flex items-center gap-2">
                 <Check size={14} className="text-emerald-500 shrink-0" />
-                <span>Detailed keyword gap analysis & PDF download</span>
+                <span>Detailed keyword gap analysis &amp; PDF download</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check size={14} className="text-emerald-500 shrink-0" />
-                <span>Unlock all handcrafted resume & cover letter templates</span>
+                <span>Unlock all handcrafted resume &amp; cover letter templates</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check size={14} className="text-emerald-500 shrink-0" />
-                <span>Unlimited resumes & cover letter drafts</span>
+                <span>Unlimited resumes &amp; cover letter drafts</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check size={14} className="text-emerald-500 shrink-0" />
-                <span>Full AI suite: auto-fill, resume & cover letter optimize</span>
+                <span>Full AI suite: auto-fill, resume &amp; cover letter optimize</span>
               </li>
             </ul>
           </div>
@@ -293,52 +260,52 @@ export default function PlansPage() {
             {loadingPlan === 'PRO_MONTHLY' ? (
               <Loader2 size={15} className="animate-spin" />
             ) : (
-              <span>Get 1 Month Pro · ₹2</span>
+              <span>Subscribe Monthly · ₹2</span>
             )}
           </button>
         </div>
 
-        {/* Plan Option 2: 6 Months Special Launch Offer */}
+        {/* Plan Option 2: Annual (Yearly) */}
         <div className="p-7 rounded-3xl bg-black dark:bg-[#0e0e14] text-white border-2 border-blue-600 shadow-xl shadow-blue-600/10 flex flex-col justify-between relative">
           <div className="absolute top-0 right-6 -translate-y-1/2">
             <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-md">
-              BEST VALUE • 6 MONTHS
+              BEST VALUE • ANNUAL (1 YEAR)
             </span>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-4">
               <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">
-                Special Launch Pass
+                Annual Subscription
               </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                180 Days
+                365 Days
               </span>
             </div>
-            <h3 className="text-xl font-bold text-white">6-Month Pro Access</h3>
+            <h3 className="text-xl font-bold text-white">Pro Annual</h3>
             <p className="text-xs text-gray-400 mt-1">
-              Half-year full access for complete job hunting and career transition.
+              Complete 12-month access. Get hired faster with maximum savings all year.
             </p>
 
             <div className="my-6">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-extrabold text-white">₹2</span>
-                <span className="text-sm text-gray-400 line-through">₹199/mo</span>
-                <span className="text-xs text-gray-400 font-medium">/ 6 months total</span>
+                <span className="text-4xl font-extrabold text-white">₹1,206</span>
+                <span className="text-sm text-gray-400 line-through">₹2,388</span>
+                <span className="text-xs text-gray-400 font-medium">/ 1 year</span>
               </div>
               <p className="text-[11px] text-emerald-400 font-semibold mt-1">
-                🔥 ₹2 for entire 6 months, then regular ₹199/month renewal
+                🔥 ₹2/mo for first 6 months (₹12) + ₹199/mo for next 6 months (₹1,194)
               </p>
             </div>
 
             <ul className="space-y-3 mb-8 text-xs text-gray-300">
               <li className="flex items-center gap-2">
                 <Check size={14} className="text-emerald-400 shrink-0" />
-                <span>6 full months of continuous Pro coverage (180 days)</span>
+                <span>1 full year of continuous Pro coverage (365 days)</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check size={14} className="text-emerald-400 shrink-0" />
-                <span>50 ATS Scans per month (300 scans total)</span>
+                <span>50 ATS Scans per month (600 scans total)</span>
               </li>
               <li className="flex items-center gap-2">
                 <Check size={14} className="text-emerald-400 shrink-0" />
@@ -365,7 +332,7 @@ export default function PlansPage() {
               <Loader2 size={15} className="animate-spin" />
             ) : (
               <>
-                <span>Get 6 Months Pro · ₹2</span>
+                <span>Subscribe Annually · ₹1,206</span>
                 <ArrowRight size={14} />
               </>
             )}

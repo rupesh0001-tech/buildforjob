@@ -65,7 +65,7 @@ export function ProPlanModal({
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'BuildForJob',
-        description: isAnnual ? 'Pro Plan (6 Months Special Launch)' : 'Pro Plan (1 Month Subscription)',
+        description: isAnnual ? 'Pro Plan (1 Year Annual Subscription · ₹1,206)' : 'Pro Plan (1 Month Subscription · ₹2)',
         image: '/favicon.png',
         order_id: orderData.orderId,
         prefill: {
@@ -177,12 +177,20 @@ export function ProPlanModal({
               <div className="p-5 rounded-2xl bg-gray-50 dark:bg-black/30 border border-gray-200/80 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-extrabold text-gray-900 dark:text-white">₹2</span>
-                    <span className="text-sm text-gray-400 line-through">₹{isAnnual ? '199/mo' : '299'}</span>
-                    <span className="text-xs font-medium text-gray-500">/ {isAnnual ? '6 months' : '1 month'}</span>
+                    <span className="text-3xl font-extrabold text-gray-900 dark:text-white">
+                      {isAnnual ? '₹1,206' : '₹2'}
+                    </span>
+                    <span className="text-sm text-gray-400 line-through">
+                      {isAnnual ? '₹2,388' : '₹299'}
+                    </span>
+                    <span className="text-xs font-medium text-gray-500">
+                      / {isAnnual ? '1 year' : '1 month'}
+                    </span>
                   </div>
                   <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                    {isAnnual ? "🔥 ₹2 for 6 months, then ₹199/month" : "🔥 ₹2 for 1 month access"}
+                    {isAnnual 
+                      ? "🔥 ₹2/mo for first 6 months (₹12) + ₹199/mo for next 6 months (₹1,194)" 
+                      : "🔥 Special launch discount: ₹2 for 1 month"}
                   </p>
                 </div>
                 <div className="inline-flex p-1 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-semibold shrink-0">
@@ -202,7 +210,7 @@ export function ProPlanModal({
                       isAnnual ? "bg-[#001BB7] text-white shadow-xs" : "text-gray-500 hover:text-black dark:hover:text-white"
                     }`}
                   >
-                    6 Months
+                    Annual (1 Year)
                   </button>
                 </div>
               </div>
@@ -237,7 +245,11 @@ export function ProPlanModal({
                     </>
                   ) : (
                     <>
-                      <span>{isPro ? "Extend Pro Subscription (₹2)" : "Upgrade to Pro Now (₹2)"}</span>
+                      <span>
+                        {isPro 
+                          ? (isAnnual ? "Extend Pro Annual (₹1,206)" : "Extend 1 Month (₹2)") 
+                          : (isAnnual ? "Subscribe Annually (₹1,206)" : "Upgrade to Pro (₹2)")}
+                      </span>
                       <ArrowRight size={16} />
                     </>
                   )}
