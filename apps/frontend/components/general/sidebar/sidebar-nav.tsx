@@ -8,7 +8,13 @@ import React from "react";
 interface SidebarNavProps {
   navigation: {
     title: string;
-  items: { name: string; href: string; icon: LucideIcon; isComingSoon?: boolean }[];
+    items: {
+      name: string;
+      href: string;
+      icon: LucideIcon;
+      isComingSoon?: boolean;
+      badge?: React.ReactNode;
+    }[];
   }[];
   onClose?: () => void;
 }
@@ -71,11 +77,13 @@ export function SidebarNav({ navigation, onClose }: SidebarNavProps) {
                     />
                     {item.name}
                   </div>
-                  {isSoon && (
+                  {item.badge ? (
+                    item.badge
+                  ) : isSoon ? (
                     <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 rounded-md uppercase tracking-tighter">
                       Soon
                     </span>
-                  )}
+                  ) : null}
                 </Link>
               );
             })}
