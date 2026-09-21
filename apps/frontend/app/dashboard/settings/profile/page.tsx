@@ -42,6 +42,7 @@ export default function ProfileSettingsPage() {
   const [showDisconnectModal, setShowDisconnectModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  const [initialData, setInitialData] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -170,7 +171,7 @@ export default function ProfileSettingsPage() {
 
   useEffect(() => {
     if (user && !isSaving) {
-      setFormData({
+      const data = {
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         email: user.email || "",
@@ -188,9 +189,16 @@ export default function ProfileSettingsPage() {
           twitter: user.socialLinks?.twitter || "",
           website: user.socialLinks?.website || ""
         },
-      });
+      };
+      setFormData(data);
+      setInitialData(JSON.stringify(data));
     }
-  }, [user, isSaving]);
+  }, [user]);
+
+  const isDirty = React.useMemo(() => {
+    if (!initialData) return false;
+    return JSON.stringify(formData) !== initialData;
+  }, [formData, initialData]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -252,9 +260,11 @@ export default function ProfileSettingsPage() {
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
+    if (!isDirty || isSaving) return;
     setIsSaving(true);
     try {
       await dispatch(updateProfile(formData)).unwrap();
+      setInitialData(JSON.stringify(formData));
       toast.success("Profile updated successfully!");
     } catch (error: any) {
       toast.error(error || "Failed to update profile");
@@ -325,24 +335,43 @@ export default function ProfileSettingsPage() {
           <h1 className="text-3xl font-semibold text-gray-900 dark:text-white tracking-tight">Edit your Profile </h1>
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400"> Edit your professional profile to generate high-impact resumes instantly. </p>
         </div>
-        <div className="flex items-center gap-4 bg-white dark:bg-black/40 backdrop-blur-md border border-gray-300 dark:border-white/10 px-5 py-2.5 rounded-2xl shadow-sm">
-          <div className="relative w-12 h-12 flex items-center justify-center">
-             <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
-                <circle cx="22" cy="22" r="20" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-100 dark:text-white/5" />
-                <motion.circle 
-                  cx="22" cy="22" r="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-[#001BB7]/20 blur-[1px]"
-                  initial={{ strokeDasharray: "0 125.7" }} animate={{ strokeDasharray: `${(completionPercent / 100) * 125.7} 125.7` }} transition={{ duration: 1.2, ease: "circOut" }}
-                />
-                <motion.circle 
-                  cx="22" cy="22" r="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-[#001BB7]"
-                  initial={{ strokeDasharray: "0 125.7" }} animate={{ strokeDasharray: `${(completionPercent / 100) * 125.7} 125.7` }} transition={{ duration: 1, ease: "circOut" }}
-                />
-             </svg>
-             <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-[10px] font-bold text-gray-900 dark:text-white">{completionPercent}%</span>
-             </div>
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-4 bg-white dark:bg-black/40 backdrop-blur-md border border-gray-300 dark:border-white/10 px-5 py-2.5 rounded-2xl shadow-sm">
+            <div className="relative w-12 h-12 flex items-center justify-center">
+               <svg className="w-full h-full -rotate-90" viewBox="0 0 44 44">
+                  <circle cx="22" cy="22" r="20" fill="none" stroke="currentColor" strokeWidth="2.5" className="text-gray-100 dark:text-white/5" />
+                  <motion.circle 
+                    cx="22" cy="22" r="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-[#001BB7]/20 blur-[1px]"
+                    initial={{ strokeDasharray: "0 125.7" }} animate={{ strokeDasharray: `${(completionPercent / 100) * 125.7} 125.7` }} transition={{ duration: 1.2, ease: "circOut" }}
+                  />
+                  <motion.circle 
+                    cx="22" cy="22" r="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-[#001BB7]"
+                    initial={{ strokeDasharray: "0 125.7" }} animate={{ strokeDasharray: `${(completionPercent / 100) * 125.7} 125.7` }} transition={{ duration: 1, ease: "circOut" }}
+                  />
+               </svg>
+               <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-gray-900 dark:text-white">{completionPercent}%</span>
+               </div>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs font-semibold text-gray-900 dark:text-white">Profile Score</span>
+              <span className="text-[10px] text-gray-500">{completionPercent}% complete</span>
+            </div>
           </div>
-          
+
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!isDirty || isSaving}
+            className={`px-7 py-3.5 rounded-2xl font-semibold text-sm flex items-center gap-2.5 transition-all shadow-sm ${
+              isDirty && !isSaving
+                ? "bg-[#001BB7] hover:bg-[#0020d4] text-white shadow-lg shadow-[#001BB7]/20 active:scale-[0.98] cursor-pointer"
+                : "bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-white/5"
+            }`}
+          >
+            {isSaving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+            {isSaving ? "Saving..." : isDirty ? "Save Changes" : "Saved"}
+          </button>
         </div>
       </header>
 
@@ -1100,10 +1129,19 @@ export default function ProfileSettingsPage() {
               <div className="text-gray-400 text-xs font-medium italic">
                 {activeTab !== 'personal' && "Ensure you save before switching tabs."}
               </div>
-              <Button1 type="button" onClick={handleSubmit} className="px-12 py-4 flex items-center gap-3 shadow-xl shadow-[#001BB7]/20 rounded-xl font-semibold bg-[#001BB7] hover:bg-[#001BB7]/90 transition-all text-white" disabled={isSaving}>
+              <button 
+                type="button" 
+                onClick={handleSubmit} 
+                disabled={!isDirty || isSaving}
+                className={`px-12 py-4 flex items-center gap-3 rounded-xl font-semibold transition-all ${
+                  isDirty && !isSaving
+                    ? "bg-[#001BB7] hover:bg-[#0020d4] text-white shadow-xl shadow-[#001BB7]/20 active:scale-[0.98] cursor-pointer"
+                    : "bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-white/5"
+                }`}
+              >
                 {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                {isSaving ? "Updating Profile..." : "Save Changes"}
-              </Button1>
+                {isSaving ? "Updating Profile..." : isDirty ? "Save Changes" : "Saved"}
+              </button>
             </div>
           </div>
         </div>
