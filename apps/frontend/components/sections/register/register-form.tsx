@@ -22,15 +22,18 @@ export function RegisterForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     
     e.preventDefault();
-    if (!firstName || !lastName || !email || !password) {
-      toast.error("Please fill in all fields");
+    if (!firstName.trim() || !email.trim() || !password) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
-    
-
     try {
-      const resultAction = await dispatch(register({ email, password, firstName, lastName }));
+      const resultAction = await dispatch(register({ 
+        email: email.trim(), 
+        password, 
+        firstName: firstName.trim(), 
+        lastName: lastName.trim() 
+      }));
       if (register.fulfilled.match(resultAction)) {
         toast.success("Registration successful! Please verify your email.");
         router.push(`/verify-email?email=${encodeURIComponent(email)}`);
@@ -44,26 +47,29 @@ export function RegisterForm() {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
-      <div className="space-y-1.5">
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">First Name</label>
-        <input 
-          type="text"
-          placeholder="Jane "
-          value={firstName}
-          onChange={(e) => setFirstName(e.target.value)}
-          required
-          className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#111116] border border-gray-200 dark:border-white/10 text-black dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/50 transition-all placeholder:text-gray-400"
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">First Name *</label>
+          <input 
+            type="text"
+            placeholder="Jane"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            required
+            className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#111116] border border-gray-200 dark:border-white/10 text-black dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/50 transition-all placeholder:text-gray-400"
+          />
+        </div>
 
-        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
-        <input 
-          type="text"
-          placeholder="Doe"
-          value={lastName}
-          onChange={(e) => setLastName(e.target.value)}
-          required
-          className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#111116] border border-gray-200 dark:border-white/10 text-black dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/50 transition-all placeholder:text-gray-400"
-        />
+        <div className="space-y-1.5">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Last Name</label>
+          <input 
+            type="text"
+            placeholder="Doe (optional)"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-[#111116] border border-gray-200 dark:border-white/10 text-black dark:text-white focus:outline-hidden focus:ring-2 focus:ring-purple-500/50 transition-all placeholder:text-gray-400"
+          />
+        </div>
       </div>
       <div className="space-y-1.5">
         <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>

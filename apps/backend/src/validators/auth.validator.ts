@@ -11,8 +11,8 @@ const passwordSchema = z
 export const registerSchema = z.object({
   email: z.string().email('Invalid email format'),
   password: passwordSchema,
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().optional().default(''),
 });
 
 export const loginSchema = z.object({
