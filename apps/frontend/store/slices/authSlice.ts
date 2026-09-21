@@ -9,6 +9,7 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   isAuthenticated: boolean;
+  lastFetched: number | null;
 }
 
 const initialState: AuthState = {
@@ -24,6 +25,7 @@ const initialState: AuthState = {
   isLoading: false,
   error: null,
   isAuthenticated: typeof window !== 'undefined' ? !!localStorage.getItem('user') : false,
+  lastFetched: null,
 };
 
 export const login = createAsyncThunk(
@@ -88,7 +90,11 @@ export const resendOtp = createAsyncThunk(
   }
 );
 
-export const fetchProfile = createAsyncThunk(
+export const fetchProfile = createAsyncThunk<
+  User,
+  { force?: boolean } | void,
+  { state: { auth: AuthState } }
+>(
   'auth/fetchProfile',
   async (_, { rejectWithValue }) => {
     try {
@@ -100,6 +106,19 @@ export const fetchProfile = createAsyncThunk(
       return rejectWithValue(response.message);
     } catch (error: unknown) {
       return rejectWithValue(getErrorMessage(error, 'Failed to fetch profile'));
+    }
+  },
+  {
+    condition: (arg, { getState }) => {
+      const state = getState();
+      if (arg && typeof arg === 'object' && arg.force) {
+        return true;
+      }
+      // If a fetch is already in flight, skip dispatch
+      if (state.auth?.isLoading) {
+        return false;
+      }
+      return true;
     }
   }
 );
@@ -164,6 +183,42 @@ const authSlice = createSlice({
     },
     setToken: (state, action: PayloadAction<string>) => {
       // Legacy - session token is handled by httpOnly cookies now
+    },
+    setUser: (state, action: PayloadAction<User>) => {
+      state.user = action.payload;
+      state.isAuthenticated = true;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user', JSON.stringify(action.payload));
+      }
+    },
+    updateUserPlan: (state, action: PayloadAction<{ plan: 'FREE' | 'PRO'; planExpiresAt?: string | null; tokens?: number; user?: User }>) => {
+      if (action.payload.user) {
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(action.payload.user));
+        }
+      } else if (state.user) {
+        state.user.plan = action.payload.plan;
+        if (action.payload.planExpiresAt !== undefined) {
+          state.user.planExpiresAt = action.payload.planExpiresAt;
+        }
+        if (action.payload.tokens !== undefined) {
+          state.user.tokens = action.payload.tokens;
+        }
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(state.user));
+        }
+      }
+    },
+    deductTokens: (state, action: PayloadAction<number | undefined>) => {
+      const amount = action.payload ?? 0.5;
+      if (state.user && state.user.tokens !== undefined) {
+        state.user.tokens = Math.max(0, Number((state.user.tokens - amount).toFixed(2)));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user', JSON.stringify(state.user));
+        }
+      }
     }
   },
   extraReducers: (builder) => {
@@ -178,6 +233,7 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = null;
         state.isAuthenticated = true;
+        state.lastFetched = Date.now();
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -193,6 +249,7 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = null;
         state.isAuthenticated = true;
+        state.lastFetched = Date.now();
       })
       .addCase(verifyOtp.rejected, (state, action) => {
         state.isLoading = false;
@@ -206,6 +263,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.user = action.payload;
         state.isAuthenticated = true;
+        state.lastFetched = Date.now();
       })
       .addCase(fetchProfile.rejected, (state) => {
         state.isLoading = false;
@@ -224,6 +282,7 @@ const authSlice = createSlice({
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
+        state.lastFetched = Date.now();
       })
       .addCase(updateProfile.rejected, (state, action) => {
         state.isLoading = false;
@@ -236,6 +295,7 @@ const authSlice = createSlice({
       .addCase(uploadAvatar.fulfilled, (state, action) => {
         state.isLoading = false;
         state.user = action.payload;
+        state.lastFetched = Date.now();
       })
       .addCase(uploadAvatar.rejected, (state, action) => {
         state.isLoading = false;
@@ -244,5 +304,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, setToken } = authSlice.actions;
+export const { logout, clearError, setToken, setUser, updateUserPlan, deductTokens } = authSlice.actions;
 export default authSlice.reducer;

@@ -50,10 +50,10 @@ function getScoreBg(score: number) {
 }
 
 function getScoreLabel(score: number) {
-  if (score >= 80) return { label: "Excellent Match", emoji: "🎯" };
-  if (score >= 65) return { label: "Good Match", emoji: "✅" };
-  if (score >= 45) return { label: "Average Match", emoji: "⚠️" };
-  return { label: "Poor Match", emoji: "❌" };
+  if (score >= 80) return { label: "Excellent Match" };
+  if (score >= 65) return { label: "Good Match" };
+  if (score >= 45) return { label: "Average Match" };
+  return { label: "Poor Match" };
 }
 
 function getScoreGradient(score: number) {
@@ -247,11 +247,6 @@ export default function ATSCheckerPage() {
   const isPro = user?.plan === 'PRO';
   const isAnalysisUnlocked = isUnlocked || isPro || !!result?.suggestions || !!suggestions;
 
-  useEffect(() => {
-    dispatch(fetchProfile() as any);
-  }, [dispatch]);
-
-
   // History & Tab Navigation State
   const [activeTab, setActiveTab] = useState<"scan" | "history">("scan");
   const [history, setHistory] = useState<ATSResult[]>([]);
@@ -360,7 +355,6 @@ export default function ATSCheckerPage() {
     try {
       const data = await checkATSScore(file, jd);
       setResult(data);
-      dispatch(fetchProfile() as any);
     } catch (err: any) {
       const msg = getErrorMessage(err, "Something went wrong. Please try again.");
       setError(msg);
@@ -412,7 +406,6 @@ export default function ATSCheckerPage() {
           });
         }
       }
-      dispatch(fetchProfile() as any);
     } catch (err: unknown) {
       const msg = getErrorMessage(err, "Failed to get AI suggestions.");
       setError(msg);

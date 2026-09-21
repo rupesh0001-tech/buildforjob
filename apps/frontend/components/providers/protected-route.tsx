@@ -16,6 +16,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isProfileCompleteInStore = !!user && Array.isArray(user.skills);
   const [profileFetched, setProfileFetched] = React.useState(isProfileCompleteInStore);
 
+  // Track background sync so it only executes once per session
+  const hasSyncedRef = React.useRef(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -30,16 +33,22 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     if (mounted) {
       if (!isLoading && !isAuthenticated && !token) {
         router.push("/login");
-      } else if ((token || isAuthenticated) && (!user || !user.skills) && !isLoading) {
-        dispatch(fetchProfile())
-          .unwrap()
-          .then(() => {
-            setProfileFetched(true);
-          })
-          .catch(() => {
-            setProfileFetched(true);
-            dispatch(logoutUser());
-          });
+      } else if (isAuthenticated || token) {
+        if ((!user || !user.skills) && !isLoading) {
+          dispatch(fetchProfile())
+            .unwrap()
+            .then(() => {
+              setProfileFetched(true);
+            })
+            .catch(() => {
+              setProfileFetched(true);
+              dispatch(logoutUser());
+            });
+        } else if (!hasSyncedRef.current) {
+          hasSyncedRef.current = true;
+          // Background sync once to reflect active plans and credits
+          dispatch(fetchProfile()).catch(() => {});
+        }
       }
     }
   }, [isAuthenticated, isLoading, token, router, mounted, dispatch, user]);

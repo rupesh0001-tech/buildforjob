@@ -83,8 +83,7 @@ export default function MyPortfolioPage() {
 
   useEffect(() => {
     setMounted(true);
-    dispatch(fetchProfile());
-  }, [dispatch]);
+  }, []);
 
   // Load portfolio settings
   useEffect(() => {
@@ -476,7 +475,7 @@ export default function MyPortfolioPage() {
         {responsesCount > 80 && (
           <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 animate-fadeIn">
             <p className="text-xs text-amber-700 dark:text-amber-400 font-medium leading-relaxed max-w-2xl">
-              ⚠️ <strong>Warning:</strong> You are close to your limit of 100 free form submissions. When response 101 arrives, your oldest response will be deleted automatically. Upgrade to a Pro account for unlimited response storage.
+              <strong>Warning:</strong> You are close to your limit of 100 free form submissions. When response 101 arrives, your oldest response will be deleted automatically. Upgrade to a Pro account for unlimited response storage.
             </p>
             <button className="px-4 py-2 bg-amber-600 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0 transition-all hover:bg-amber-500 active:scale-95 flex items-center gap-1.5 shadow-md">
               <Sparkles size={12} />

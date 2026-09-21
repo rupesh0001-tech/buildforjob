@@ -64,7 +64,11 @@ const initialState: CoverLetterState = {
   error: null,
 };
 
-export const fetchAllCoverLetters = createAsyncThunk(
+export const fetchAllCoverLetters = createAsyncThunk<
+  CoverLetter[],
+  void,
+  { state: { coverLetter: CoverLetterState } }
+>(
   'coverLetter/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
@@ -72,6 +76,15 @@ export const fetchAllCoverLetters = createAsyncThunk(
       return data;
     } catch (error: unknown) {
       return rejectWithValue(getErrorMessage(error, 'Failed to fetch cover letters'));
+    }
+  },
+  {
+    condition: (_, { getState }) => {
+      const state = getState();
+      if (state.coverLetter?.isLoading) {
+        return false;
+      }
+      return true;
     }
   }
 );

@@ -50,7 +50,7 @@ export function ForgotPasswordForm() {
         </div>
 
         <div className="p-4 rounded-2xl bg-gray-50 dark:bg-[#111116] border border-gray-200 dark:border-white/10 text-xs text-gray-500 dark:text-gray-400 leading-relaxed text-left">
-          💡 <strong>Tip:</strong> The reset link is valid for 1 hour. If you don&apos;t see the email in your inbox, please check your spam or junk folder.
+          <strong>Tip:</strong> The reset link is valid for 1 hour. If you don&apos;t see the email in your inbox, please check your spam or junk folder.
         </div>
 
         <div className="space-y-3 pt-2">

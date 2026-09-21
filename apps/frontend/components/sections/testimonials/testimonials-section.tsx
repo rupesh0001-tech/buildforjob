@@ -175,8 +175,10 @@ export function TestimonialsSection() {
                     
                     <div className="flex items-center gap-2 shrink-0">
                       {isFront && (
-                        <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60 text-[11px] font-semibold flex items-center gap-1.5 animate-pulse shadow-2xs">
-                          <span>👈 Swipe 👉</span>
+                        <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-300 border border-blue-200/80 dark:border-blue-800/60 text-[11px] font-semibold flex items-center gap-1 animate-pulse shadow-2xs">
+                          <ChevronLeft size={12} />
+                          <span>Swipe cards</span>
+                          <ChevronRight size={12} />
                         </span>
                       )}
                       <button className="text-slate-400 hover:text-slate-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors">

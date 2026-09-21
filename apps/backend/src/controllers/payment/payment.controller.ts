@@ -173,6 +173,18 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
       },
     });
 
+    const updatedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        skills: true,
+        experience: true,
+        education: true,
+        projects: true,
+      },
+    });
+
+    const { password: _, ...userWithoutPassword } = updatedUser || {};
+
     return res.json({
       success: true,
       message: `Payment successfully verified! Your account is upgraded to PRO for ${existingPayment.plan === 'PRO_ANNUAL' ? '1 year (Annual Plan)' : '1 month'}.`,
@@ -180,6 +192,7 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
         plan: 'PRO',
         planExpiresAt,
         tokens: 50.0,
+        user: userWithoutPassword,
       },
     });
   } catch (error) {

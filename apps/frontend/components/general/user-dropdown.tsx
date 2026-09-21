@@ -34,24 +34,25 @@ export function UserDropdown() {
   const isPro = user?.plan === "PRO";
 
   return (
-    <div className="relative" ref={dropdownRef}>
-      <div className="relative inline-block">
-        <button 
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-10 h-10 rounded-full bg-linear-to-br from-purple-500 to-blue-500 border-2 border-white dark:border-black shadow-lg shadow-purple-500/20 cursor-pointer hover:scale-105 transition-transform flex items-center justify-center text-white font-bold text-xs uppercase overflow-hidden"
-        >
+    <div className="relative inline-block" ref={dropdownRef}>
+      <button 
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 cursor-pointer group focus:outline-hidden select-none"
+        aria-label="User menu"
+      >
+        <div className="w-10 h-10 rounded-full bg-linear-to-br from-purple-500 to-blue-500 border-2 border-white dark:border-black shadow-lg shadow-purple-500/20 group-hover:scale-105 transition-transform flex items-center justify-center text-white font-bold text-xs uppercase overflow-hidden shrink-0">
           {user?.avatarUrl ? (
             <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
             <span>{user?.firstName?.[0]}{user?.lastName?.[0] || user?.email?.[0] || 'U'}</span>
           )}
-        </button>
+        </div>
         {isPro && (
-          <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 bg-[#001BB7] text-white text-[8px] font-black tracking-wider rounded-full border-2 border-white dark:border-black uppercase pointer-events-none shadow-xs">
+          <span className="px-2 py-0.5 bg-[#001BB7] text-white text-[9px] font-black tracking-wider rounded-full uppercase shadow-xs group-hover:brightness-110 transition-all shrink-0">
             PRO
           </span>
         )}
-      </div>
+      </button>
 
       <AnimatePresence>
         {isOpen && (

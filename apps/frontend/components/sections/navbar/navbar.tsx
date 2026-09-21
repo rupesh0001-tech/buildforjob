@@ -173,7 +173,7 @@ export function Navbar(props: NavbarProps) {
             {mounted && isAuthenticated ? (
               <>
                 <div className={cn('flex', 'items-center', 'gap-3', 'px-1', 'py-2')}>
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <div className={cn('w-10', 'h-10', 'rounded-full', 'bg-purple-100', 'dark:bg-purple-900/40', 'text-purple-600', 'dark:text-purple-400', 'flex', 'items-center', 'justify-center', 'text-sm', 'font-bold', 'overflow-hidden')}>
                       {user?.avatarUrl ? (
                         <img src={user.avatarUrl} alt="Avatar" className={cn('w-full', 'h-full', 'object-cover')} />
@@ -181,11 +181,6 @@ export function Navbar(props: NavbarProps) {
                         <span>{user?.firstName?.[0]}{user?.lastName?.[0]}</span>
                       )}
                     </div>
-                    {user?.plan === 'PRO' && (
-                      <span className="absolute -bottom-1 -right-1 px-1.5 py-0.5 bg-blue-600 text-white text-[8px] font-extrabold tracking-wider rounded-full border-2 border-white dark:border-[#0c0c0e] uppercase pointer-events-none shadow-xs">
-                        PRO
-                      </span>
-                    )}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">

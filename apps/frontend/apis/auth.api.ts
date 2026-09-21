@@ -9,6 +9,8 @@ import {
   User
 } from '@/types/auth';
 
+let activeProfilePromise: Promise<ProfileResponse> | null = null;
+
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await api.post<AuthResponse>('/auth/login', credentials);
@@ -31,8 +33,15 @@ export const authApi = {
   },
 
   getProfile: async (): Promise<ProfileResponse> => {
-    const response = await api.get<ProfileResponse>('/user/profile');
-    return response.data;
+    if (activeProfilePromise) {
+      return activeProfilePromise;
+    }
+    activeProfilePromise = api.get<ProfileResponse>('/user/profile')
+      .then(res => res.data)
+      .finally(() => {
+        activeProfilePromise = null;
+      });
+    return activeProfilePromise;
   },
 
   updateProfile: async (data: Partial<User>): Promise<ProfileResponse> => {

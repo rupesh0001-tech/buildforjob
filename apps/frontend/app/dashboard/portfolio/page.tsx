@@ -122,11 +122,6 @@ export default function PortfolioPage() {
   // Video refs for play on hover
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
-  useEffect(() => {
-    // Fetch profile details to facilitate autofill matching
-    dispatch(fetchProfile());
-  }, [dispatch]);
-
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -1733,7 +1728,7 @@ export default function PortfolioPage() {
                   This action imports and synchronizes your developer details (name, job bio, email, social links, experience logs, projects, and education history) from your synced profile.
                 </p>
                 <p className="text-xs text-amber-500 font-medium">
-                  ⚠️ Warning: Any edits you have manually entered in the current workspace forms might be overwritten.
+                  Warning: Any edits you have manually entered in the current workspace forms might be overwritten.
                 </p>
               </div>
 

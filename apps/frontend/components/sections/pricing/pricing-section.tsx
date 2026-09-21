@@ -2,7 +2,8 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2, Sparkles } from '@/lib/icons';
-import { useAppSelector } from "@/store/hooks";
+import { useAppSelector, useAppDispatch } from "@/store/hooks";
+import { fetchProfile, updateUserPlan } from "@/store/slices/authSlice";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { paymentApi } from "@/apis/payment.api";
@@ -14,6 +15,7 @@ declare global {
 }
 
 export function PricingSection() {
+  const dispatch = useAppDispatch();
   const [isAnnual, setIsAnnual] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showAlreadyProPopup, setShowAlreadyProPopup] = useState(false);
@@ -43,7 +45,7 @@ export function PricingSection() {
 
     if (user?.plan === 'PRO') {
       setShowAlreadyProPopup(true);
-      toast.info("You're already a Pro user! 🎉");
+      toast.info("You're already a Pro user!");
       return;
     }
 
@@ -83,7 +85,11 @@ export function PricingSection() {
             });
 
             if (verifyRes.success) {
-              toast.success("🎉 Payment successful! Your account has been upgraded to PRO.");
+              toast.success("Payment successful! Your account has been upgraded to PRO.");
+              if (verifyRes.data) {
+                dispatch(updateUserPlan(verifyRes.data));
+              }
+              await dispatch(fetchProfile() as any);
               router.push("/dashboard/plans");
             } else {
               toast.error(verifyRes.message || "Payment verification failed.");
@@ -216,15 +222,15 @@ export function PricingSection() {
               </div>
               <div className="mt-3 inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-500/30">
                 {isAnnual 
-                  ? "🔥 ₹2/mo for first 6 months (₹12) + ₹199/mo for next 6 months (₹1,194)" 
-                  : "🔥 Special Launch Discount: ₹2 for 1 month"}
+                  ? "₹2/mo for first 6 months (₹12) + ₹199/mo for next 6 months (₹1,194)" 
+                  : "Special Launch Discount: ₹2 for 1 month"}
               </div>
             </div>
             <button
               onClick={() => {
                 if (user?.plan === 'PRO') {
                   setShowAlreadyProPopup(true);
-                  toast.info("You're already a Pro user! 🎉");
+                  toast.info("You're already a Pro user!");
                 } else {
                   handleUpgrade(isAnnual ? 'PRO_ANNUAL' : 'PRO_MONTHLY');
                 }
@@ -291,7 +297,7 @@ export function PricingSection() {
                 </span>
 
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">
-                  You&apos;re already a Pro user! 🎉
+                  You&apos;re already a Pro user!
                 </h3>
 
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">

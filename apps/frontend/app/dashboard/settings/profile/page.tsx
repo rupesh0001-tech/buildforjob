@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { fetchProfile, updateProfile, uploadAvatar } from "@/store/slices/authSlice";
+import { fetchProfile, updateProfile, uploadAvatar, deductTokens } from "@/store/slices/authSlice";
 import { 
   Mail, User as UserIcon, Phone, MapPin, Briefcase, FileText, 
   Camera, Save, Loader2, Plus, Trash2, GraduationCap, 
@@ -588,7 +588,7 @@ export default function ProfileSettingsPage() {
                           const result = await generateAI(prompt, 'summary');
                           setFormData(prev => ({ ...prev, bio: result }));
                           toast.success("Bio enhanced successfully!", { id: toastId });
-                          dispatch(fetchProfile() as any);
+                          dispatch(deductTokens(0.5));
                         } catch (error: any) {
                           console.error(error);
                           const msg = error.response?.data?.message || "Failed to enhance bio.";
@@ -683,7 +683,7 @@ export default function ProfileSettingsPage() {
                                 const result = await generateAI(prompt, 'experience');
                                 setNewExperience(prev => ({ ...prev, description: result }));
                                 toast.success("Responsibilities enhanced successfully!", { id: toastId });
-                                dispatch(fetchProfile() as any);
+                                dispatch(deductTokens(0.5));
                               } catch (error: any) {
                                 console.error(error);
                                 const msg = error.response?.data?.message || "Failed to enhance description.";
@@ -972,7 +972,7 @@ export default function ProfileSettingsPage() {
                                 const result = await generateAI(prompt, 'project');
                                 setNewProject(prev => ({ ...prev, description: result }));
                                 toast.success("Project description enhanced successfully!", { id: toastId });
-                                dispatch(fetchProfile() as any);
+                                dispatch(deductTokens(0.5));
                               } catch (error: any) {
                                       console.error(error);
                                       const msg = error.response?.data?.message || "Failed to enhance description.";
