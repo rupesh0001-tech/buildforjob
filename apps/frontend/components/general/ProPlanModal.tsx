@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles, Check, Loader2, ArrowRight } from '@/lib/icons';
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { fetchProfile } from "@/store/slices/authSlice";
+import { fetchProfile, updateUserPlan } from "@/store/slices/authSlice";
 import { paymentApi } from "@/apis/payment.api";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
@@ -85,7 +85,10 @@ export function ProPlanModal({
             });
 
             if (verifyRes.success) {
-              toast.success("🎉 Welcome to Pro! Your account has been upgraded successfully.");
+              toast.success("Welcome to Pro! Your account has been upgraded successfully.");
+              if (verifyRes.data) {
+                dispatch(updateUserPlan(verifyRes.data));
+              }
               await dispatch(fetchProfile() as any);
               onClose();
               if (onSuccess) {
@@ -156,7 +159,7 @@ export function ProPlanModal({
               {/* Title & Description */}
               <div>
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
-                  {isPro ? "You're Already on the Pro Plan! 🎉" : title}
+                  {isPro ? "You're Already on the Pro Plan!" : title}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
                   {isPro 
@@ -189,8 +192,8 @@ export function ProPlanModal({
                   </div>
                   <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
                     {isAnnual 
-                      ? "🔥 ₹2/mo for first 6 months (₹12) + ₹199/mo for next 6 months (₹1,194)" 
-                      : "🔥 Special launch discount: ₹2 for 1 month"}
+                      ? "₹2/mo for first 6 months (₹12) + ₹199/mo for next 6 months (₹1,194)" 
+                      : "Special launch discount: ₹2 for 1 month"}
                   </p>
                 </div>
                 <div className="inline-flex p-1 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-semibold shrink-0">

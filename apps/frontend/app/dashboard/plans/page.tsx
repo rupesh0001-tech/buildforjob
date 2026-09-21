@@ -6,7 +6,7 @@ import {
   Calendar, CreditCard, Loader2, Zap, Clock, Infinity as InfinityIcon 
 } from '@/lib/icons';
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
-import { fetchProfile } from "@/store/slices/authSlice";
+import { fetchProfile, updateUserPlan } from "@/store/slices/authSlice";
 import { paymentApi } from "@/apis/payment.api";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
@@ -22,8 +22,6 @@ export default function PlansPage() {
   const isPro = user?.plan === "PRO";
 
   useEffect(() => {
-    dispatch(fetchProfile() as any);
-
     const fetchHistory = async () => {
       setHistoryLoading(true);
       try {
@@ -36,7 +34,7 @@ export default function PlansPage() {
       }
     };
     fetchHistory();
-  }, [dispatch]);
+  }, []);
 
   const loadRazorpayScript = () => {
     return new Promise<boolean>((resolve) => {
@@ -89,7 +87,10 @@ export default function PlansPage() {
             });
 
             if (verifyRes.success) {
-              toast.success("🎉 Payment verified! Your Pro plan is now active.");
+              toast.success("Payment verified! Your Pro plan is now active.");
+              if (verifyRes.data) {
+                dispatch(updateUserPlan(verifyRes.data));
+              }
               await dispatch(fetchProfile() as any);
               const data = await paymentApi.getPaymentHistory();
               setHistory(data || []);
@@ -125,6 +126,8 @@ export default function PlansPage() {
   };
 
   const daysLeft = getDaysLeft();
+  const isAnnualSubscriber = isPro && (history?.[0]?.plan === 'PRO_ANNUAL' || (daysLeft !== null && daysLeft > 40));
+  const isMonthlySubscriber = isPro && !isAnnualSubscriber;
 
   return (
     <div className="max-w-5xl mx-auto space-y-10 pb-16 animate-in fade-in duration-500">
@@ -223,7 +226,7 @@ export default function PlansPage() {
                 <span className="text-xs text-gray-500 font-medium">/ month</span>
               </div>
               <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                🔥 1 Month access, then shifts to standard Free plan
+                1 Month access, then shifts to standard Free plan
               </p>
             </div>
 
@@ -251,18 +254,43 @@ export default function PlansPage() {
             </ul>
           </div>
 
-          <button
-            type="button"
-            onClick={() => handleSubscribe('PRO_MONTHLY')}
-            disabled={!!loadingPlan}
-            className="w-full py-3.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-black font-semibold text-xs hover:bg-gray-800 dark:hover:bg-gray-100 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            {loadingPlan === 'PRO_MONTHLY' ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <span>Subscribe Monthly · ₹2</span>
-            )}
-          </button>
+          {isMonthlySubscriber ? (
+            <div className="space-y-2">
+              <div className="w-full py-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-semibold text-xs flex items-center justify-center gap-2">
+                <Check size={15} />
+                <span>Current Active Plan</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSubscribe('PRO_MONTHLY')}
+                disabled={!!loadingPlan}
+                className="w-full py-2.5 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 font-medium text-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                {loadingPlan === 'PRO_MONTHLY' ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <span>Extend for 1 Month · ₹2</span>
+                )}
+              </button>
+            </div>
+          ) : isAnnualSubscriber ? (
+            <div className="w-full py-3.5 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-400 text-xs font-medium text-center">
+              Covered by Annual Plan
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleSubscribe('PRO_MONTHLY')}
+              disabled={!!loadingPlan}
+              className="w-full py-3.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-black font-semibold text-xs hover:bg-gray-800 dark:hover:bg-gray-100 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {loadingPlan === 'PRO_MONTHLY' ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <span>Subscribe Monthly · ₹2</span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* Plan Option 2: Annual (Yearly) */}
@@ -294,7 +322,7 @@ export default function PlansPage() {
                 <span className="text-xs text-gray-400 font-medium">/ 1 year</span>
               </div>
               <p className="text-[11px] text-emerald-400 font-semibold mt-1">
-                🔥 ₹2/mo for first 6 months (₹12) + ₹199/mo for next 6 months (₹1,194)
+                ₹2/mo for first 6 months (₹12) + ₹199/mo for next 6 months (₹1,194)
               </p>
             </div>
 
@@ -322,21 +350,28 @@ export default function PlansPage() {
             </ul>
           </div>
 
-          <button
-            type="button"
-            onClick={() => handleSubscribe('PRO_ANNUAL')}
-            disabled={!!loadingPlan}
-            className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-          >
-            {loadingPlan === 'PRO_ANNUAL' ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <>
-                <span>Subscribe Annually · ₹1,206</span>
-                <ArrowRight size={14} />
-              </>
-            )}
-          </button>
+          {isAnnualSubscriber ? (
+            <div className="w-full py-3.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-semibold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/10">
+              <Check size={16} />
+              <span>Current Active Plan (1 Year)</span>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => handleSubscribe('PRO_ANNUAL')}
+              disabled={!!loadingPlan}
+              className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {loadingPlan === 'PRO_ANNUAL' ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <>
+                  <span>{isMonthlySubscriber ? "Upgrade to Annual · ₹1,206" : "Subscribe Annually · ₹1,206"}</span>
+                  <ArrowRight size={14} />
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 

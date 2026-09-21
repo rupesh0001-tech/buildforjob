@@ -20,9 +20,14 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose, isOverlay }: SidebarProps) {
   const { user } = useAppSelector((state) => state.auth);
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navigation = useMemo(() => {
-    const isPro = user?.plan === "PRO";
+    const isPro = mounted && user?.plan === "PRO";
     
     let planBadgeText = "Free • ∞";
     if (isPro) {
@@ -35,13 +40,17 @@ export function Sidebar({ isOpen, onClose, isOverlay }: SidebarProps) {
       }
     }
 
-    const planBadge = isPro ? (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase tracking-wider shrink-0">
-        {planBadgeText}
-      </span>
-    ) : (
-      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 tracking-wider shrink-0">
-        {planBadgeText}
+    const planBadge = (
+      <span
+        suppressHydrationWarning
+        className={cn(
+          "text-[10px] font-bold px-1.5 py-0.5 rounded-md tracking-wider shrink-0",
+          isPro
+            ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase"
+            : "bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400"
+        )}
+      >
+        {isPro ? planBadgeText : "Free • ∞"}
       </span>
     );
 
@@ -111,7 +120,7 @@ export function Sidebar({ isOpen, onClose, isOverlay }: SidebarProps) {
         ]
       }
     ];
-  }, [user]);
+  }, [user, mounted]);
 
   return (
     <div className={cn(

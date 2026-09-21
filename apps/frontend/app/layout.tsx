@@ -125,12 +125,14 @@ export default function RootLayout({
       suppressHydrationWarning
       className="h-full antialiased"
     >
-      <body className={`${jakartaSans.variable} ${jetbrainsMono.variable} min-h-full flex flex-col font-sans`} suppressHydrationWarning>
-        <Script
+      <head>
+        <script
           id="website-jsonld"
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
         />
+      </head>
+      <body className={`${jakartaSans.variable} ${jetbrainsMono.variable} min-h-full flex flex-col font-sans`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" disableTransitionOnChange>
           <ReduxProvider>
             <ApiLoadingProvider>

@@ -43,11 +43,6 @@ export function SidebarUser() {
                {initials}
              </div>
            )}
-           {isPro && (
-             <span className="absolute -bottom-1 -right-1 px-1 py-[0.5px] bg-blue-600 text-white text-[7px] font-extrabold tracking-wider rounded-full border border-white dark:border-neutral-900 uppercase pointer-events-none">
-               PRO
-             </span>
-           )}
          </div>
          <div className="flex flex-col flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
