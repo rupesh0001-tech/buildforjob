@@ -1147,25 +1147,6 @@ export default function ProfileSettingsPage() {
                 </motion.div>
               )}
             </AnimatePresence>
-
-            <div className="pt-10 border-t border-gray-100 dark:border-white/5 flex justify-between items-center gap-6">
-              <div className="text-gray-400 text-xs font-medium italic">
-                {activeTab !== 'personal' && "Ensure you save before switching tabs."}
-              </div>
-              <button 
-                type="button" 
-                onClick={handleSubmit} 
-                disabled={!isDirty || isSaving}
-                className={`px-12 py-4 flex items-center gap-3 rounded-xl font-semibold transition-all ${
-                  isDirty && !isSaving
-                    ? "bg-[#001BB7] hover:bg-[#0020d4] text-white shadow-xl shadow-[#001BB7]/20 active:scale-[0.98] cursor-pointer"
-                    : "bg-gray-100 dark:bg-white/10 text-gray-400 dark:text-gray-500 cursor-not-allowed border border-gray-200 dark:border-white/5"
-                }`}
-              >
-                {isSaving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-                {isSaving ? "Updating Profile..." : isDirty ? "Save Changes" : "Saved"}
-              </button>
-            </div>
           </div>
         </div>
       </div>
