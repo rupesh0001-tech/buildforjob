@@ -332,7 +332,14 @@ export default function ProfileSettingsPage() {
     <div className="max-w-6xl mx-auto pb-20 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-semibold text-gray-900 dark:text-white tracking-tight">Edit your Profile </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-semibold text-gray-900 dark:text-white tracking-tight">Edit your Profile</h1>
+            {user?.plan === 'PRO' && (
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase tracking-wider">
+                PRO
+              </span>
+            )}
+          </div>
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400"> Edit your professional profile to generate high-impact resumes instantly. </p>
         </div>
         <div className="flex items-center gap-4 flex-wrap">
@@ -394,6 +401,11 @@ export default function ProfileSettingsPage() {
                   <span className="tracking-tighter">{user?.firstName?.[0]?.toUpperCase()}{user?.lastName?.[0]?.toUpperCase()}</span>
                 )}
               </div>
+              {user?.plan === 'PRO' && (
+                <span className="absolute top-1 right-1 px-2 py-0.5 bg-blue-600 text-white text-[9px] font-bold rounded-full border-2 border-white dark:border-[#0a0a0a] uppercase shadow-xs tracking-wider pointer-events-none">
+                  PRO
+                </span>
+              )}
               <button 
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -410,7 +422,18 @@ export default function ProfileSettingsPage() {
                 className="hidden" 
               />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white tracking-tight leading-none">{formData.firstName} {formData.lastName}</h2>
+            <div className="flex items-center justify-center gap-2">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white tracking-tight leading-none">{formData.firstName} {formData.lastName}</h2>
+              {user?.plan === 'PRO' ? (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase tracking-wide">
+                  PRO
+                </span>
+              ) : (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  FREE
+                </span>
+              )}
+            </div>
             {formData.jobTitle && <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-2 tracking-wide uppercase">{formData.jobTitle}</p>}
           </div>
 

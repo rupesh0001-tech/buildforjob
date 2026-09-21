@@ -3,12 +3,13 @@
 import React from "react";
 import { SidebarBrand } from "./sidebar-brand";
 import { SidebarNav } from "./sidebar-nav";
+import { SidebarPlans } from "./sidebar-plans";
 import { SidebarUser } from "./sidebar-user";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, FileCheck, FilePlus, Wand2, 
   Files, History, Mail, Edit, MonitorUp, Globe, 
-  TrendingUp, Link as LinkIcon, Briefcase, User 
+  TrendingUp, Link as LinkIcon, Briefcase, User, Sparkles
 } from '@/lib/icons';
 
 export const navigation = [
@@ -16,6 +17,12 @@ export const navigation = [
     title: "Dashboard",
     items: [
       { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    ]
+  },
+  {
+    title: "Plans",
+    items: [
+      { name: "Plans & Billing", href: "/dashboard/plans", icon: Sparkles },
     ]
   },
   {
@@ -86,6 +93,7 @@ export function Sidebar({ isOpen, onClose, isOverlay }: SidebarProps) {
         <>
           <SidebarBrand />
           <SidebarNav navigation={navigation} onClose={onClose} />
+          <SidebarPlans />
           <SidebarUser />
         </>
       )}

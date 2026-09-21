@@ -31,19 +31,33 @@ export function SidebarUser() {
   return (
     <div className="px-4 mt-auto">
       <Link href="/dashboard/settings/profile" className="flex items-center gap-3 p-2 rounded-xl border border-gray-300 dark:border-white/10 bg-white dark:bg-black/20 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group">
-         {avatarUrl ? (
-           <img 
-             src={avatarUrl} 
-             alt={name} 
-             className="w-8 h-8 rounded-full object-cover group-hover:scale-105 transition-transform"
-           />
-         ) : (
-           <div className="w-8 h-8 rounded-full bg-linear-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold text-xs group-hover:scale-105 transition-transform">
-             {initials}
-           </div>
-         )}
+         <div className="relative shrink-0">
+           {avatarUrl ? (
+             <img 
+               src={avatarUrl} 
+               alt={name} 
+               className="w-8 h-8 rounded-full object-cover group-hover:scale-105 transition-transform"
+             />
+           ) : (
+             <div className="w-8 h-8 rounded-full bg-linear-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold text-xs group-hover:scale-105 transition-transform">
+               {initials}
+             </div>
+           )}
+           {isPro && (
+             <span className="absolute -bottom-1 -right-1 px-1 py-[0.5px] bg-blue-600 text-white text-[7px] font-extrabold tracking-wider rounded-full border border-white dark:border-neutral-900 uppercase pointer-events-none">
+               PRO
+             </span>
+           )}
+         </div>
          <div className="flex flex-col flex-1 min-w-0">
-            <span className="text-sm font-medium text-black dark:text-white truncate">{name}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium text-black dark:text-white truncate">{name}</span>
+              {isPro && (
+                <span className="text-[8px] font-bold px-1.5 py-[0.5px] rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 uppercase tracking-wide shrink-0">
+                  PRO
+                </span>
+              )}
+            </div>
             <span className="text-xs text-gray-500 dark:text-gray-400 truncate">{subtext}</span>
          </div>
       </Link>

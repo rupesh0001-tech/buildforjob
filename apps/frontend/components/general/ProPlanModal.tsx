@@ -31,6 +31,8 @@ export function ProPlanModal({
   const [loading, setLoading] = useState(false);
   const [isAnnual, setIsAnnual] = useState(false);
 
+  const isPro = user?.plan === "PRO";
+
   const loadRazorpayScript = () => {
     return new Promise<boolean>((resolve) => {
       if (typeof window !== "undefined" && (window as any).Razorpay) {
@@ -63,7 +65,7 @@ export function ProPlanModal({
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'BuildForJob',
-        description: isAnnual ? 'Pro Plan (Annual Subscription)' : 'Pro Plan (Monthly Subscription)',
+        description: isAnnual ? 'Pro Plan (6 Months Special Launch)' : 'Pro Plan (1 Month Subscription)',
         image: '/favicon.png',
         order_id: orderData.orderId,
         prefill: {
@@ -140,7 +142,7 @@ export function ProPlanModal({
               <div className="flex items-center justify-between">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#001BB7]/10 dark:bg-blue-500/10 border border-[#001BB7]/20 text-[#001BB7] dark:text-blue-400 text-xs font-bold uppercase tracking-wider">
                   <Sparkles size={13} />
-                  Pro Feature
+                  {isPro ? "Active Subscriber" : "Pro Feature"}
                 </div>
                 <button
                   type="button"
@@ -153,9 +155,17 @@ export function ProPlanModal({
 
               {/* Title & Description */}
               <div>
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{title}</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">{description}</p>
-                {featureHighlight && (
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                  {isPro ? "You're Already on the Pro Plan! 🎉" : title}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
+                  {isPro 
+                    ? user?.planExpiresAt 
+                      ? `Your Pro subscription is active until ${new Date(user.planExpiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}. You can extend your access below.`
+                      : "You currently enjoy unlimited access to all Pro templates, tools, and 50 monthly ATS scans."
+                    : description}
+                </p>
+                {featureHighlight && !isPro && (
                   <div className="mt-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/40 text-purple-700 dark:text-purple-300 text-xs font-semibold flex items-center gap-2">
                     <Sparkles size={14} className="shrink-0" />
                     <span>{featureHighlight}</span>
@@ -164,35 +174,35 @@ export function ProPlanModal({
               </div>
 
               {/* Pricing Card */}
-              <div className="p-5 rounded-2xl bg-gray-50 dark:bg-black/30 border border-gray-200/80 dark:border-white/10 flex items-center justify-between">
+              <div className="p-5 rounded-2xl bg-gray-50 dark:bg-black/30 border border-gray-200/80 dark:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-extrabold text-gray-900 dark:text-white">₹2</span>
-                    <span className="text-sm text-gray-400 line-through">₹{isAnnual ? '249' : '299'}</span>
-                    <span className="text-xs font-medium text-gray-500">/ month</span>
+                    <span className="text-sm text-gray-400 line-through">₹{isAnnual ? '199/mo' : '299'}</span>
+                    <span className="text-xs font-medium text-gray-500">/ {isAnnual ? '6 months' : '1 month'}</span>
                   </div>
                   <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold mt-1">
-                    🔥 Launch Special: ₹2 / month
+                    {isAnnual ? "🔥 ₹2 for 6 months, then ₹199/month" : "🔥 ₹2 for 1 month access"}
                   </p>
                 </div>
-                <div className="inline-flex p-1 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-semibold">
+                <div className="inline-flex p-1 bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-semibold shrink-0">
                   <button
                     type="button"
                     onClick={() => setIsAnnual(false)}
                     className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                      !isAnnual ? "bg-[#001BB7] text-white" : "text-gray-500 hover:text-black dark:hover:text-white"
+                      !isAnnual ? "bg-[#001BB7] text-white shadow-xs" : "text-gray-500 hover:text-black dark:hover:text-white"
                     }`}
                   >
-                    Monthly
+                    1 Month
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsAnnual(true)}
                     className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                      isAnnual ? "bg-[#001BB7] text-white" : "text-gray-500 hover:text-black dark:hover:text-white"
+                      isAnnual ? "bg-[#001BB7] text-white shadow-xs" : "text-gray-500 hover:text-black dark:hover:text-white"
                     }`}
                   >
-                    Annual
+                    6 Months
                   </button>
                 </div>
               </div>
@@ -227,7 +237,7 @@ export function ProPlanModal({
                     </>
                   ) : (
                     <>
-                      <span>Upgrade to Pro Now</span>
+                      <span>{isPro ? "Extend Pro Subscription (₹2)" : "Upgrade to Pro Now (₹2)"}</span>
                       <ArrowRight size={16} />
                     </>
                   )}

@@ -26,4 +26,10 @@ export const paymentApi = {
     const response = await api.post('/payment/verify', data);
     return response.data;
   },
+
+  getPaymentHistory: async () => {
+    const response = await api.get('/payment/history');
+    return response.data.data;
+  },
 };
+

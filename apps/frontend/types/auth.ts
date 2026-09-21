@@ -21,6 +21,7 @@ export interface User {
   tokens?: number;
   lastTokenReset?: string;
   plan?: 'FREE' | 'PRO';
+  planExpiresAt?: string | null;
   createdAt?: string;
 
   // Profile Builder Fields

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Check, Loader2 } from '@/lib/icons';
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, Loader2, Sparkles } from '@/lib/icons';
 import { useAppSelector } from "@/store/hooks";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ declare global {
 export function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [showAlreadyProPopup, setShowAlreadyProPopup] = useState(false);
   const { isAuthenticated, user } = useAppSelector((state) => state.auth);
   const router = useRouter();
 
@@ -40,6 +41,12 @@ export function PricingSection() {
       return;
     }
 
+    if (user?.plan === 'PRO') {
+      setShowAlreadyProPopup(true);
+      toast.info("You're already a Pro user! 🎉");
+      return;
+    }
+
     try {
       setLoading(true);
       const isScriptLoaded = await loadRazorpayScript();
@@ -56,7 +63,7 @@ export function PricingSection() {
         amount: orderData.amount,
         currency: orderData.currency || 'INR',
         name: 'BuildForJob',
-        description: planType === 'PRO_ANNUAL' ? 'Pro Plan (Annual)' : 'Pro Plan (Monthly)',
+        description: planType === 'PRO_ANNUAL' ? 'Pro Plan (6 Months Launch Offer)' : 'Pro Plan (1 Month)',
         image: '/favicon.png',
         order_id: orderData.orderId,
         prefill: {
@@ -77,7 +84,7 @@ export function PricingSection() {
 
             if (verifyRes.success) {
               toast.success("🎉 Payment successful! Your account has been upgraded to PRO.");
-              router.push("/dashboard");
+              router.push("/dashboard/plans");
             } else {
               toast.error(verifyRes.message || "Payment verification failed.");
             }
@@ -125,13 +132,13 @@ export function PricingSection() {
             onClick={() => setIsAnnual(false)}
             className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${!isAnnual ? 'bg-white dark:bg-black text-black dark:text-white shadow-xs' : 'text-gray-500 hover:text-black dark:hover:text-white'}`}
           >
-            Monthly
+            1 Month
           </button>
           <button 
             onClick={() => setIsAnnual(true)}
             className={`px-6 py-2 rounded-full text-sm font-medium transition-colors flex items-center gap-2 ${isAnnual ? 'bg-white dark:bg-black text-black dark:text-white shadow-xs' : 'text-gray-500 hover:text-black dark:hover:text-white'}`}
           >
-            Annually <span className="text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Save 20%</span>
+            6 Months <span className="text-[10px] bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Special</span>
           </button>
         </div>
       </motion.div>
@@ -150,7 +157,7 @@ export function PricingSection() {
             <p className="text-gray-500 text-sm mb-6 font-medium">Perfect to test the waters and start building</p>
             <div className="mb-6">
               <span className="text-4xl sm:text-5xl font-extrabold text-black dark:text-white tracking-tight">₹0</span>
-              <span className="text-gray-500 text-sm font-medium"> / forever</span>
+              <span className="text-gray-500 text-sm font-medium"> / forever (Infinity)</span>
             </div>
             <button
               onClick={() => {
@@ -198,23 +205,39 @@ export function PricingSection() {
             <div className="mb-6">
               <div className="flex items-baseline gap-2.5">
                 <span className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">₹2</span>
-                <span className="text-gray-400 line-through text-lg">₹{isAnnual ? '249' : '299'}</span>
-                <span className="text-gray-400 text-sm font-medium">/ month</span>
+                <span className="text-gray-400 line-through text-lg">₹{isAnnual ? '199/mo' : '299'}</span>
+                <span className="text-gray-400 text-sm font-medium">/ {isAnnual ? '6 months' : '1 month'}</span>
               </div>
               <div className="mt-3 inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-500/30">
-                🔥 Special Launch Discount: ₹2 / month
+                {isAnnual ? "🔥 Launch Offer: ₹2 for 6 months, then regular ₹199/mo" : "🔥 Special Launch Discount: ₹2 for 1 month"}
               </div>
             </div>
             <button
-              onClick={() => handleUpgrade(isAnnual ? 'PRO_ANNUAL' : 'PRO_MONTHLY')}
+              onClick={() => {
+                if (user?.plan === 'PRO') {
+                  setShowAlreadyProPopup(true);
+                  toast.info("You're already a Pro user! 🎉");
+                } else {
+                  handleUpgrade(isAnnual ? 'PRO_ANNUAL' : 'PRO_MONTHLY');
+                }
+              }}
               disabled={loading}
-              className="w-full py-3 px-6 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all mb-8 shadow-lg shadow-blue-600/35 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+              className={`w-full py-3 px-6 rounded-full font-semibold transition-all mb-8 shadow-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75 ${
+                user?.plan === 'PRO'
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-blue-600/30"
+                  : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/35"
+              }`}
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Processing...</span>
                 </>
+              ) : user?.plan === 'PRO' ? (
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} />
+                  <span>You&apos;re already a Pro user</span>
+                </div>
               ) : (
                 "Upgrade to Pro"
               )}
@@ -236,6 +259,78 @@ export function PricingSection() {
           </div>
         </motion.div>
       </div>
+
+      {/* Already Pro User Popup Modal */}
+      <AnimatePresence>
+        {showAlreadyProPopup && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative z-10 w-full max-w-md rounded-3xl bg-white dark:bg-[#111116] border border-gray-200 dark:border-white/10 shadow-2xl p-7 text-center overflow-hidden"
+            >
+              {/* Background Glow */}
+              <div className="absolute top-0 inset-x-0 h-28 bg-gradient-to-b from-blue-500/10 via-indigo-500/5 to-transparent pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4 shadow-xs">
+                  <Sparkles className="w-7 h-7" />
+                </div>
+
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-600 text-white uppercase tracking-wider mb-2">
+                  Active Pro Member
+                </span>
+
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">
+                  You&apos;re already a Pro user! 🎉
+                </h3>
+
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
+                  Your account currently has full PRO privileges active. You already have access to all premium resume templates, unlimited documents, advanced ATS scan scores, and AI features.
+                </p>
+
+                {user?.planExpiresAt && (
+                  <div className="w-full p-3 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs text-gray-700 dark:text-gray-300 mb-6 flex items-center justify-between">
+                    <span className="font-medium text-gray-500 dark:text-gray-400">Subscription Validity:</span>
+                    <span className="font-semibold text-blue-600 dark:text-blue-400">
+                      Valid until {new Date(user.planExpiresAt).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
+                  <button
+                    onClick={() => {
+                      setShowAlreadyProPopup(false);
+                      router.push("/dashboard");
+                    }}
+                    className="flex-1 py-3 px-5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all cursor-pointer shadow-md shadow-blue-600/20"
+                  >
+                    Go to Dashboard
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAlreadyProPopup(false);
+                      router.push("/dashboard/plans");
+                    }}
+                    className="flex-1 py-3 px-5 rounded-xl bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-900 dark:text-white font-semibold text-sm transition-all cursor-pointer"
+                  >
+                    Plans &amp; Billing
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setShowAlreadyProPopup(false)}
+                  className="mt-4 text-xs font-medium text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
