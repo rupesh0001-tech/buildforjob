@@ -2,9 +2,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import ResumeForm from "@/components/resume-builder/ResumeForm";
 import ResumePreview from "@/components/resume-builder/ResumePreview";
-import { ArrowLeft, Download, Save, Clock, Loader2, Sparkles } from '@/lib/icons';
+import { ArrowLeft, Download, Save, Clock, Loader2, Sparkles, Lock } from '@/lib/icons';
 import Link from "next/link";
 import { OptimizeModal } from "@/components/general/OptimizeModal";
+import { ProPlanModal } from "@/components/general/ProPlanModal";
 import axiosInstance from "@/apis/axiosInstance";
 import { getErrorMessage } from "@/lib/utils";
 import { toPng } from "html-to-image";
@@ -37,9 +38,17 @@ export default function ResumeBuilderPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [localTitle, setLocalTitle] = useState(titleParam || resumeState.resumeTitle || "Untitled Resume");
   const [showOptimizeModal, setShowOptimizeModal] = useState(false);
+  const [showProModal, setShowProModal] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
 
+  const isPro = user?.plan === "PRO";
+  const FREE_TEMPLATES = ["modern", "professional"];
+
   const handleOptimize = async (companyName: string, roles: string[]) => {
+    if (!isPro) {
+      setShowProModal(true);
+      return;
+    }
     try {
       setIsOptimizing(true);
       const content = {
@@ -71,6 +80,9 @@ export default function ResumeBuilderPage() {
       console.error("Optimization failed:", error);
       const msg = getErrorMessage(error, "Optimization failed. Upgrade to PRO to use optimization features.");
       toast.error(msg);
+      if (error?.response?.data?.requiresPro || error?.response?.status === 403) {
+        setShowProModal(true);
+      }
     } finally {
       setIsOptimizing(false);
     }
@@ -185,13 +197,21 @@ export default function ResumeBuilderPage() {
         toast.success("Resume saved successfully!");
       }
     } catch (error: any) {
-      toast.error(error || "Failed to save resume");
+      const errorMsg = typeof error === 'string' ? error : (error?.message || "Failed to save resume");
+      toast.error(errorMsg);
+      if (error?.requiresPro || (typeof error === 'string' && error.toLowerCase().includes('pro'))) {
+        setShowProModal(true);
+      }
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDownload = async () => {
+    if (!isPro && !FREE_TEMPLATES.includes(resumeState.template)) {
+      setShowProModal(true);
+      return;
+    }
     const element = document.getElementById("resume-preview");
     if (!element) return;
 
@@ -276,11 +296,22 @@ export default function ResumeBuilderPage() {
         <div className="flex items-center gap-3 w-full md:w-auto">
           <button
             type="button"
-            onClick={() => setShowOptimizeModal(true)}
+            onClick={() => {
+              if (!isPro) {
+                setShowProModal(true);
+                return;
+              }
+              setShowOptimizeModal(true);
+            }}
             className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold font-sans text-sm transition-all shadow-sm shadow-purple-500/20"
           >
             <Sparkles size={16} />
             Optimize
+            {!isPro && (
+              <span className="text-[10px] font-bold bg-amber-400 text-black px-1.5 py-0.5 rounded ml-1 flex items-center gap-0.5">
+                <Lock size={9} /> PRO
+              </span>
+            )}
           </button>
 
           <button
@@ -323,6 +354,13 @@ export default function ResumeBuilderPage() {
         isOptimizing={isOptimizing}
         title="Optimize Resume for Company"
         description="Rewrite summaries, projects, and work experience tailored to match the target company's culture and keywords."
+      />
+
+      <ProPlanModal
+        isOpen={showProModal}
+        onClose={() => setShowProModal(false)}
+        title="Upgrade to Pro"
+        description="Get unlimited resumes, full AI optimization, premium templates, and unlimited versions."
       />
     </div>
   );

@@ -9,6 +9,7 @@ import { fetchAllResumes, deleteResumeById } from "@/lib/store/features/resume-s
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ConfirmModal } from "@/components/general/ConfirmModal";
+import { ProPlanModal } from "@/components/general/ProPlanModal";
 
 function ResumeCardMenu({ resumeId, onDeleteRequest }: { resumeId: string; onDeleteRequest: () => void }) {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -73,9 +74,12 @@ export default function ResumesPage() {
   const [isMagic, setIsMagic] = React.useState(false);
   const [title, setTitle] = React.useState("");
   const [company, setCompany] = React.useState("");
+  const [showProModal, setShowProModal] = React.useState(false);
 
   const dispatch = useAppDispatch();
   const { resumesList, isLoading } = useAppSelector((state) => state.resume);
+  const { user } = useAppSelector((state) => state.auth);
+  const isPro = user?.plan === "PRO";
   
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
@@ -84,12 +88,33 @@ export default function ResumesPage() {
   }, [dispatch]);
 
   const handleStart = (magic: boolean) => {
+    if (!isPro && resumesList.length >= 3) {
+      setShowProModal(true);
+      return;
+    }
     setIsMagic(magic);
     setShowModal(true);
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-20">
+      {/* Free tier usage alert if on free plan */}
+      {!isPro && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 text-xs text-blue-900 dark:text-blue-200">
+          <div className="flex items-center gap-2 font-medium">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
+            <span>
+              Free Plan Document Limit: <strong>{resumesList.length} of 3</strong> resumes used.
+            </span>
+          </div>
+          <button
+            onClick={() => setShowProModal(true)}
+            className="font-bold text-primary dark:text-blue-400 hover:underline shrink-0"
+          >
+            Upgrade for Unlimited Resumes &rarr;
+          </button>
+        </div>
+      )}
       
       {/* Action Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -285,6 +310,13 @@ export default function ResumesPage() {
         description="Are you sure you want to delete this resume? This action cannot be undone."
         confirmText="Delete"
         variant="danger"
+      />
+
+      <ProPlanModal
+        isOpen={showProModal}
+        onClose={() => setShowProModal(false)}
+        title="Resume Limit Reached"
+        description="The Free plan allows up to 3 resumes. Upgrade to Pro for unlimited resumes, premium templates, and version tracking."
       />
     </div>
   );

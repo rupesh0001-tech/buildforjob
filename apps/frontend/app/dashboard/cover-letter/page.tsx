@@ -3,13 +3,14 @@ import React from "react";
 import CoverLetterForm from "@/components/cover-letter/CoverLetterForm";
 import CoverLetterPreview from "@/components/cover-letter/CoverLetterPreview";
 import CoverLetterThemeSelector from "@/components/cover-letter/CoverLetterThemeSelector";
-import { Download, ArrowLeft, Save, Loader2, Sparkles } from '@/lib/icons';
+import { Download, ArrowLeft, Save, Loader2, Sparkles, Lock } from '@/lib/icons';
 import Link from "next/link";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { ProPlanModal } from "@/components/general/ProPlanModal";
 import { 
   updatePersonalInfo, 
   updateBody, 
@@ -50,9 +51,16 @@ const CoverLetterPage = () => {
   const magic = searchParams.get("magic");
   const editId = searchParams.get("id");
   const [showOptimizeModal, setShowOptimizeModal] = useState(false);
+  const [showProModal, setShowProModal] = useState(false);
   const [isOptimizing, setIsOptimizing] = useState(false);
 
+  const isPro = user?.plan === "PRO";
+
   const handleOptimize = async (companyName: string, roles: string[]) => {
+    if (!isPro) {
+      setShowProModal(true);
+      return;
+    }
     try {
       setIsOptimizing(true);
       const content = {
@@ -83,6 +91,9 @@ const CoverLetterPage = () => {
       console.error("Optimization failed:", error);
       const msg = getErrorMessage(error, "Optimization failed. Upgrade to PRO to use optimization features.");
       toast.error(msg);
+      if (error?.response?.data?.requiresPro || error?.response?.status === 403) {
+        setShowProModal(true);
+      }
     } finally {
       setIsOptimizing(false);
     }
@@ -158,11 +169,19 @@ const CoverLetterPage = () => {
       await dispatch(saveCoverLetter({ id: currentId || undefined, data })).unwrap();
       toast.success("Cover letter saved successfully!", { id: toastId });
     } catch (error: any) {
-      toast.error(error || "Failed to save cover letter", { id: toastId });
+      const errorMsg = typeof error === 'string' ? error : (error?.message || "Failed to save cover letter");
+      toast.error(errorMsg, { id: toastId });
+      if (error?.requiresPro || (typeof error === 'string' && error.toLowerCase().includes('pro'))) {
+        setShowProModal(true);
+      }
     }
   };
 
   const handleDownload = async () => {
+    if (!isPro && template !== "modern") {
+      setShowProModal(true);
+      return;
+    }
     const element = document.getElementById("cover-letter-preview");
     if (!element) return;
 
@@ -231,11 +250,22 @@ const CoverLetterPage = () => {
         <div className="flex items-center gap-3 w-full md:w-auto">
           <button
             type="button"
-            onClick={() => setShowOptimizeModal(true)}
+            onClick={() => {
+              if (!isPro) {
+                setShowProModal(true);
+                return;
+              }
+              setShowOptimizeModal(true);
+            }}
             className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold font-sans text-sm transition-all shadow-sm shadow-purple-500/20"
           >
             <Sparkles size={16} />
             Optimize
+            {!isPro && (
+              <span className="text-[10px] font-bold bg-amber-400 text-black px-1.5 py-0.5 rounded ml-1 flex items-center gap-0.5">
+                <Lock size={9} /> PRO
+              </span>
+            )}
           </button>
 
           <button
@@ -277,6 +307,13 @@ const CoverLetterPage = () => {
         isOptimizing={isOptimizing}
         title="Optimize Cover Letter"
         description="Rewrite intro, bodies, and call-to-action tailored to match the target company's culture and keywords."
+      />
+
+      <ProPlanModal
+        isOpen={showProModal}
+        onClose={() => setShowProModal(false)}
+        title="Upgrade to Pro"
+        description="Get unlimited cover letters, full AI optimization, premium templates, and priority exports."
       />
     </div>
   );

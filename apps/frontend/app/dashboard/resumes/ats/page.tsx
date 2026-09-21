@@ -22,6 +22,7 @@ import {
   ChevronDown,
   Check,
   Search,
+  Lock,
 } from '@/lib/icons';
 import { checkATSScore, getATSSuggestions, getATSReports, unlockReportSuggestions } from "@/apis/ats.api";
 import type { ATSResult, ATSSuggestions } from "@/apis/ats.api";
@@ -32,6 +33,7 @@ import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { fetchProfile } from "@/store/slices/authSlice";
+import { ProPlanModal } from "@/components/general/ProPlanModal";
 
 // ─── Score colour helpers ──────────────────────────────────────────────────
 
@@ -240,8 +242,9 @@ export default function ATSCheckerPage() {
   const [suggestions, setSuggestions] = useState<ATSSuggestions | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [showProModal, setShowProModal] = useState(false);
 
-  const isPro = user?.plan === 'PRO' || user?.plan === 'PRO_MONTHLY' || user?.plan === 'PRO_ANNUAL';
+  const isPro = user?.plan === 'PRO';
   const isAnalysisUnlocked = isUnlocked || isPro || !!result?.suggestions || !!suggestions;
 
   useEffect(() => {
@@ -297,6 +300,10 @@ export default function ATSCheckerPage() {
   }, []);
 
   const handleGenerateCompanyRoleJD = async () => {
+    if (!isPro) {
+      setShowProModal(true);
+      return;
+    }
     if (!selectedCompanyId || !selectedRole) {
       toast.error("Please select a target company and role.");
       return;
@@ -354,9 +361,12 @@ export default function ATSCheckerPage() {
       const data = await checkATSScore(file, jd);
       setResult(data);
       dispatch(fetchProfile() as any);
-    } catch (err: unknown) {
+    } catch (err: any) {
       const msg = getErrorMessage(err, "Something went wrong. Please try again.");
       setError(msg);
+      if (err?.response?.data?.requiresPro || err?.response?.status === 403) {
+        setShowProModal(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -373,68 +383,12 @@ export default function ATSCheckerPage() {
     });
   };
 
-  const handlePurchasePro = async () => {
+  const handlePurchasePro = () => {
     if (isPro) {
       handleUnlockAndAnalyze();
       return;
     }
-    try {
-      setSuggestionsLoading(true);
-      const isLoaded = await loadRazorpayScript();
-      if (!isLoaded) {
-        toast.error("Failed to load Razorpay SDK. Please check your network connection.");
-        setSuggestionsLoading(false);
-        return;
-      }
-
-      const orderData = await paymentApi.createOrder('PRO_MONTHLY');
-      const options = {
-        key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_live_TcZCA8XhXHM8pZ',
-        amount: orderData.amount,
-        currency: orderData.currency || 'INR',
-        name: 'BuildForJob',
-        description: 'Pro Plan Subscription (Monthly)',
-        image: '/favicon.png',
-        order_id: orderData.orderId,
-        prefill: {
-          name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
-          email: user?.email || '',
-        },
-        theme: { color: '#001BB7' },
-        handler: async function (response: any) {
-          try {
-            const verifyRes = await paymentApi.verifyPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              plan: 'PRO_MONTHLY',
-            });
-            if (verifyRes.success) {
-              toast.success("🎉 Payment successful! Pro Plan activated.");
-              setIsUnlocked(true);
-              await dispatch(fetchProfile() as any);
-              handleUnlockAndAnalyze();
-            } else {
-              toast.error(verifyRes.message || "Payment verification failed");
-            }
-          } catch (err: any) {
-            toast.error(getErrorMessage(err, "Payment verification failed."));
-          } finally {
-            setSuggestionsLoading(false);
-          }
-        },
-        modal: {
-          ondismiss: function () {
-            setSuggestionsLoading(false);
-          },
-        },
-      };
-      const rzp = new (window as any).Razorpay(options);
-      rzp.open();
-    } catch (err: any) {
-      toast.error(getErrorMessage(err, "Failed to initiate payment."));
-      setSuggestionsLoading(false);
-    }
+    setShowProModal(true);
   };
 
   const handleUnlockAndAnalyze = async () => {
@@ -482,6 +436,10 @@ export default function ATSCheckerPage() {
   };
 
   const handleDownloadPDF = async () => {
+    if (!isPro) {
+      setShowProModal(true);
+      return;
+    }
     if (!result || !suggestions) return;
     
     try {
@@ -852,7 +810,7 @@ export default function ATSCheckerPage() {
                     type="button"
                     disabled={!selectedCompanyId || !selectedRole || jdGenerating}
                     onClick={handleGenerateCompanyRoleJD}
-                    className="px-5 py-4 bg-[#001BB7] hover:bg-[#0020d4] text-white rounded-xl text-sm font-medium transition-all disabled:opacity-40 cursor-pointer flex items-center justify-center gap-2 shrink-0"
+                    className="px-5 py-4 bg-[#001BB7] hover:bg-[#0020d4] text-white rounded-xl text-sm font-medium transition-all disabled:opacity-40 cursor-pointer flex items-center justify-center gap-2 shrink-0 shadow-md shadow-blue-500/20"
                   >
                     {jdGenerating ? (
                       <>
@@ -863,6 +821,11 @@ export default function ATSCheckerPage() {
                       <>
                         <Sparkles size={15} />
                         Auto-Fill
+                        {!isPro && (
+                          <span className="text-[10px] font-bold bg-amber-400 text-black px-1.5 py-0.5 rounded ml-1 flex items-center gap-0.5">
+                            <Lock size={9} /> PRO
+                          </span>
+                        )}
                       </>
                     )}
                   </button>
@@ -1272,7 +1235,7 @@ export default function ATSCheckerPage() {
                         </p>
                         
                         <button 
-                          onClick={isPro ? handleUnlockAndAnalyze : handlePurchasePro}
+                          onClick={isPro ? handleUnlockAndAnalyze : () => setShowProModal(true)}
                           disabled={suggestionsLoading}
                           className="w-full py-5 bg-primary hover:brightness-110 text-white rounded-[24px] font-semibold shadow-xl shadow-primary/30 transition-all active:scale-[0.97] cursor-pointer flex items-center justify-center gap-3 group text-lg disabled:opacity-50"
                         >
@@ -1282,21 +1245,21 @@ export default function ATSCheckerPage() {
                             </>
                           ) : (
                             <>
-                              Purchase Pro · ₹2 ($0.02)
-                              <RotateCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                              Upgrade to Pro · ₹2 / mo
+                              <Sparkles className="w-5 h-5" />
                             </>
                           )}
                         </button>
                         
                         <div className="mt-6 flex items-center justify-center gap-6">
                            <div className="flex flex-col items-center">
-                              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Payment</p>
-                              <p className="text-xs text-gray-500 font-semibold">One-time</p>
+                              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Access</p>
+                              <p className="text-xs text-gray-500 font-semibold">50 Scans / mo</p>
                            </div>
                            <div className="w-px h-8 bg-gray-200 dark:bg-gray-800" />
                            <div className="flex flex-col items-center">
-                              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Access</p>
-                              <p className="text-xs text-gray-500 font-semibold">1 Month</p>
+                              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Analysis</p>
+                              <p className="text-xs text-gray-500 font-semibold">Detailed + PDF</p>
                            </div>
                         </div>
                      </motion.div>
@@ -1316,6 +1279,17 @@ export default function ATSCheckerPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ProPlanModal
+        isOpen={showProModal}
+        onClose={() => setShowProModal(false)}
+        onSuccess={() => {
+          setIsUnlocked(true);
+          handleUnlockAndAnalyze();
+        }}
+        title="Upgrade to Pro"
+        description="Get 50 monthly ATS scans, detailed keyword analysis, PDF reports, and AI auto-fill."
+      />
     </div>
   );
 }

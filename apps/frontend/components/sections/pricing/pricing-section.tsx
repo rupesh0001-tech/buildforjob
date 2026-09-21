@@ -166,12 +166,12 @@ export function PricingSection() {
             </button>
             <ul className="space-y-4 mb-8">
               {[
-                "5 ATS Scans monthly",
-                "Basic analysis (Pay ₹20 to see 1 detailed report)",
-                "Locked templates (Modern & Professional are free; others preview-only)",
+                "5 ATS Scans lifetime",
+                "Basic analysis only",
+                "Locked templates (Modern & Professional free; others preview-only)",
                 "Maximum of 3 resumes & 3 cover letters",
                 "Keep track of 3 versions per document",
-                "Limited AI helper features"
+                "5 starter credits for AI rewrites/summaries only"
               ].map((f, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-gray-600 dark:text-gray-300">
                   <Check className="text-blue-600 shrink-0 mt-0.5" size={16} /> {f}
@@ -226,7 +226,7 @@ export function PricingSection() {
                 "Access to all premium resume templates",
                 "Unlimited resumes & cover letters",
                 "Unlimited version tracking",
-                "Access to all AI writer & sync features"
+                "Full AI features (auto-fill, optimization, 50 monthly credits)"
               ].map((f, i) => (
                 <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
                   <Check className="text-emerald-400 shrink-0 mt-0.5" size={16} /> {f}

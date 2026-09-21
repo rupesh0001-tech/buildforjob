@@ -9,6 +9,8 @@ import { fetchAllCoverLetters, deleteCoverLetterById } from "@/lib/store/feature
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ConfirmModal } from "@/components/general/ConfirmModal";
+import { ProPlanModal } from "@/components/general/ProPlanModal";
+import { useRouter } from "next/navigation";
 
 function CoverLetterCardMenu({ clId, onDeleteRequest }: { clId: string; onDeleteRequest: () => void }) {
   const [isOpen, setIsOpen] = React.useState(false);
@@ -69,19 +71,27 @@ function CoverLetterCardMenu({ clId, onDeleteRequest }: { clId: string; onDelete
 
 export default function AllCoverLettersPage() {
   const [showModal, setShowModal] = React.useState(false);
+  const [showProModal, setShowProModal] = React.useState(false);
   const [title, setTitle] = React.useState("");
   const [company, setCompany] = React.useState("");
   const [searchQuery, setSearchQuery] = React.useState("");
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
+  const router = useRouter();
   const dispatch = useAppDispatch();
   const { coverLettersList, isLoading } = useAppSelector((state) => state.coverLetter);
+  const { user } = useAppSelector((state) => state.auth);
+  const isPro = user?.plan === "PRO";
 
   useEffect(() => {
     dispatch(fetchAllCoverLetters());
   }, [dispatch]);
 
   const handleStart = () => {
+    if (!isPro && coverLettersList.length >= 3) {
+      setShowProModal(true);
+      return;
+    }
     setShowModal(true);
   };
 
@@ -92,6 +102,23 @@ export default function AllCoverLettersPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-20">
+      {/* Free tier usage alert if on free plan */}
+      {!isPro && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-2xl bg-blue-500/5 dark:bg-blue-500/10 border border-blue-500/20 text-xs text-blue-900 dark:text-blue-200">
+          <div className="flex items-center gap-2 font-medium">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shrink-0" />
+            <span>
+              Free Plan Document Limit: <strong>{coverLettersList.length} of 3</strong> cover letters used.
+            </span>
+          </div>
+          <button
+            onClick={() => setShowProModal(true)}
+            className="font-bold text-primary dark:text-blue-400 hover:underline shrink-0"
+          >
+            Upgrade for Unlimited Cover Letters &rarr;
+          </button>
+        </div>
+      )}
       
       {/* Action Cards / Header */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,14 +161,21 @@ export default function AllCoverLettersPage() {
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Instantly generate a cover letter based on your profile and target job.</p>
             </div>
           </div>
-          <Link 
-            href="/dashboard/cover-letter?magic=true"
-            className="mt-8 block"
+          <button 
+            type="button"
+            onClick={() => {
+              if (!isPro && coverLettersList.length >= 3) {
+                setShowProModal(true);
+                return;
+              }
+              router.push("/dashboard/cover-letter?magic=true");
+            }}
+            className="mt-8 block w-full text-left"
           >
             <Button1 className="w-full py-3 rounded-xl flex items-center justify-center gap-2 font-semibold">
                Generate via AI <Sparkles size={16} />
             </Button1>
-          </Link>
+          </button>
         </motion.div>
       </div>
 
@@ -302,6 +336,13 @@ export default function AllCoverLettersPage() {
         description="Are you sure you want to delete this cover letter? This action cannot be undone."
         confirmText="Delete"
         variant="danger"
+      />
+
+      <ProPlanModal
+        isOpen={showProModal}
+        onClose={() => setShowProModal(false)}
+        title="Cover Letter Limit Reached"
+        description="The Free plan allows up to 3 cover letters. Upgrade to Pro for unlimited cover letters, AI tailoring, and all templates."
       />
     </div>
   );
