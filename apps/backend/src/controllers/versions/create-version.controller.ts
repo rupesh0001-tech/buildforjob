@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/db.config';
 import { uploadToImageKit } from '../../services/imagekit/imagekit.service';
+import { checkAndExpireUserPlan } from '../../utils/plan.utils';
 
 export async function createVersion(req: Request, res: Response, next: NextFunction) {
   try {
@@ -19,10 +20,7 @@ export async function createVersion(req: Request, res: Response, next: NextFunct
       return res.status(400).json({ message: "Resume file, project, or existing URL is required" });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { plan: true }
-    });
+    const user = await checkAndExpireUserPlan(userId);
 
     if (user?.plan !== 'PRO' && resumeId) {
       const vCount = await prisma.applicationVersion.count({

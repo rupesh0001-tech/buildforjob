@@ -142,9 +142,17 @@ export async function verifyPayment(req: Request, res: Response, next: NextFunct
     // 5. Calculate expiration date based on the plan saved in the database:
     // PRO_MONTHLY = 30 days (1 month)
     // PRO_ANNUAL = 180 days (6 months launch offer)
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { plan: true, planExpiresAt: true },
+    });
+
     const now = new Date();
+    const baseDate = (currentUser?.plan === 'PRO' && currentUser.planExpiresAt && currentUser.planExpiresAt > now)
+      ? new Date(currentUser.planExpiresAt)
+      : now;
     const durationDays = existingPayment.plan === 'PRO_ANNUAL' ? 180 : 30;
-    const planExpiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+    const planExpiresAt = new Date(baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
     // 6. Update user's plan and expiry date in database
     await prisma.user.update({

@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { getImprovementSuggestions } from '../../services/ats/ats.service';
 import prisma from '../../config/db.config';
-
+import { checkAndExpireUserPlan } from '../../utils/plan.utils';
 
 export async function unlockReportSuggestions(req: Request, res: Response, next: NextFunction) {
   try {
@@ -12,10 +12,7 @@ export async function unlockReportSuggestions(req: Request, res: Response, next:
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { plan: true }
-    });
+    const user = await checkAndExpireUserPlan(userId);
 
     if (user?.plan !== 'PRO') {
       return res.status(403).json({

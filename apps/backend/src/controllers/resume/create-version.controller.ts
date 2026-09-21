@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/db.config';
+import { checkAndExpireUserPlan } from '../../utils/plan.utils';
 
 export async function createVersion(req: Request, res: Response, next: NextFunction) {
   try {
@@ -18,10 +19,7 @@ export async function createVersion(req: Request, res: Response, next: NextFunct
       return res.status(404).json({ success: false, message: 'Resume not found or unauthorized' });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { plan: true }
-    });
+    const user = await checkAndExpireUserPlan(userId);
 
     if (user?.plan !== 'PRO') {
       const versionCount = await prisma.resumeVersion.count({ where: { resumeId: id } });

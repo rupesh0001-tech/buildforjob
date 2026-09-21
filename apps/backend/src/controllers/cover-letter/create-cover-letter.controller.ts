@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/db.config';
+import { checkAndExpireUserPlan } from '../../utils/plan.utils';
 
 export async function createCoverLetter(req: Request, res: Response, next: NextFunction) {
   try {
@@ -8,10 +9,7 @@ export async function createCoverLetter(req: Request, res: Response, next: NextF
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { plan: true }
-    });
+    const user = await checkAndExpireUserPlan(userId);
 
     if (user?.plan !== 'PRO') {
       const count = await prisma.coverLetter.count({ where: { userId } });

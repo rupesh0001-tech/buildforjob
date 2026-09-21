@@ -3,6 +3,7 @@ import { extractTextFromPDF, computeATSScore } from '../../services/ats/ats.serv
 import { uploadToImageKit } from '../../services/imagekit/imagekit.service';
 import prisma from '../../config/db.config';
 import { deductTokens } from '../../utils/token.utils';
+import { checkAndExpireUserPlan } from '../../utils/plan.utils';
 
 export async function checkATS(req: Request, res: Response, next: NextFunction) {
   try {
@@ -14,10 +15,7 @@ export async function checkATS(req: Request, res: Response, next: NextFunction) 
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { plan: true }
-    });
+    const user = await checkAndExpireUserPlan(userId);
 
     const isPro = user?.plan === 'PRO';
 

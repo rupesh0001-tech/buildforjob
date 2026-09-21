@@ -1,15 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import prisma from '../../config/db.config';
+import { checkAndExpireUserPlan } from '../../utils/plan.utils';
 
 export async function createResume(req: Request, res: Response, next: NextFunction) {
   try {
     const userId = req.user?.userId;
     if (!userId) return res.status(401).json({ success: false, message: 'Unauthorized' });
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { plan: true }
-    });
+    const user = await checkAndExpireUserPlan(userId);
 
     if (user?.plan !== 'PRO') {
       const resumeCount = await prisma.resume.count({ where: { userId } });

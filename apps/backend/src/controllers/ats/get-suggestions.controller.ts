@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { extractTextFromPDF, getImprovementSuggestions } from '../../services/ats/ats.service';
 import prisma from '../../config/db.config';
 import { deductTokens } from '../../utils/token.utils';
+import { checkAndExpireUserPlan } from '../../utils/plan.utils';
 
 export async function getSuggestions(req: Request, res: Response, next: NextFunction) {
   try {
@@ -14,10 +15,7 @@ export async function getSuggestions(req: Request, res: Response, next: NextFunc
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { plan: true }
-    });
+    const user = await checkAndExpireUserPlan(userId);
 
     if (user?.plan !== 'PRO') {
       return res.status(403).json({
