@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { setTemplate } from "@/lib/store/features/resume-slice";
 import { ChevronDown, Palette, Lock, Check } from '@/lib/icons';
@@ -55,8 +56,33 @@ export function LatexTemplateSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const [showProModal, setShowProModal] = useState(false);
   const [hoveredTemplate, setHoveredTemplate] = useState<typeof TEMPLATES[0] | null>(null);
+  const [menuRect, setMenuRect] = useState<{ top: number; left: number; right: number; bottom: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const selectedTemplate = TEMPLATES.find((t) => t.id === activeTemplate) || TEMPLATES[0];
+
+  useEffect(() => {
+    if (isOpen && menuRef.current) {
+      const updatePosition = () => {
+        if (menuRef.current) {
+          const rect = menuRef.current.getBoundingClientRect();
+          setMenuRect({
+            top: rect.top,
+            left: rect.left,
+            right: rect.right,
+            bottom: rect.bottom,
+          });
+        }
+      };
+      updatePosition();
+      window.addEventListener("scroll", updatePosition, true);
+      window.addEventListener("resize", updatePosition);
+      return () => {
+        window.removeEventListener("scroll", updatePosition, true);
+        window.removeEventListener("resize", updatePosition);
+      };
+    }
+  }, [isOpen, hoveredTemplate]);
 
   const handleSelect = (tempId: string) => {
     const temp = TEMPLATES.find((t) => t.id === tempId);
@@ -97,6 +123,7 @@ export function LatexTemplateSelector() {
             }} 
           />
           <div 
+            ref={menuRef}
             className="absolute right-0 sm:right-auto sm:left-0 mt-2 w-56 bg-white dark:bg-[#12121a] border border-gray-200 dark:border-white/10 rounded-2xl shadow-2xl z-50 p-1.5 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
             onMouseLeave={() => setHoveredTemplate(null)}
           >
@@ -134,13 +161,19 @@ export function LatexTemplateSelector() {
                 );
               })}
             </div>
+          </div>
 
-            {/* Hover Image Preview Popover on the Right */}
-            {hoveredTemplate && (
-              <div 
-                className="absolute left-full top-0 ml-3 w-64 bg-white dark:bg-[#12121a] border border-gray-200 dark:border-white/10 rounded-2xl p-3 shadow-2xl z-[60] animate-in fade-in zoom-in-95 duration-150 backdrop-blur-xl pointer-events-none hidden sm:block"
-                style={{ isolation: 'isolate' }}
-              >
+          {/* Hover Image Preview Portal - Completely outside any overflow/scroll clipping */}
+          {typeof document !== "undefined" && hoveredTemplate && menuRect && createPortal(
+            <div 
+              className="fixed z-[99999] pointer-events-none animate-in fade-in zoom-in-95 duration-150 select-none"
+              style={{
+                top: `${Math.max(16, Math.min(window.innerHeight - 440, menuRect.top))}px`,
+                left: `${menuRect.right + 300 <= window.innerWidth ? menuRect.right + 12 : Math.max(16, menuRect.left - 292)}px`,
+                width: "280px",
+              }}
+            >
+              <div className="bg-white dark:bg-[#12121a] border border-gray-200 dark:border-white/15 rounded-2xl p-3 shadow-2xl backdrop-blur-2xl">
                 <div className="flex items-center justify-between mb-2 px-0.5">
                   <span className="text-xs font-bold text-gray-900 dark:text-white truncate">
                     {hoveredTemplate.name}
@@ -156,7 +189,7 @@ export function LatexTemplateSelector() {
                   )}
                 </div>
 
-                <div className="w-full aspect-[1/1.3] bg-gray-50 dark:bg-black/40 rounded-xl overflow-hidden border border-gray-200/80 dark:border-white/10 shadow-inner relative">
+                <div className="w-full aspect-[1/1.35] bg-gray-50 dark:bg-black/50 rounded-xl overflow-hidden border border-gray-200/80 dark:border-white/10 shadow-md relative">
                   <img
                     src={hoveredTemplate.image}
                     alt={hoveredTemplate.name}
@@ -169,8 +202,9 @@ export function LatexTemplateSelector() {
                   {hoveredTemplate.description}
                 </p>
               </div>
-            )}
-          </div>
+            </div>,
+            document.body
+          )}
         </>
       )}
 
