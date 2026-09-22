@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import ResumeForm from "@/components/resume-builder/ResumeForm";
 import ResumePreview from "@/components/resume-builder/ResumePreview";
 import { ArrowLeft, Download, Save, Clock, Loader2, Sparkles, Lock, Eye, Code2, Copy, Check, FileCode } from '@/lib/icons';
@@ -53,6 +53,8 @@ export default function ResumeBuilderPage() {
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const isPro = user?.plan === "PRO";
+  const compileSeqRef = useRef(0);
+  const prevTemplateRef = useRef(resumeState.template);
 
   const handleOptimize = async (companyName: string, roles: string[]) => {
     if (!isPro) {
@@ -233,39 +235,59 @@ export default function ResumeBuilderPage() {
     sectionOrder: resumeState.sectionOrder || ["summary", "education", "experience", "projects", "skills"],
   }), [resumeState]);
 
-  const handleCompile = useCallback(async () => {
+  const handleCompile = useCallback(async (options: { isManual?: boolean; fetchCode?: boolean } = {}) => {
+    const seq = ++compileSeqRef.current;
     try {
       setIsCompiling(true);
       setCompileError(null);
       const content = getResumePayload();
+      const shouldFetchCode = options.fetchCode || previewMode === "code";
 
-      const [blob, source] = await Promise.all([
+      const requests: [Promise<Blob>, Promise<string>] = [
         resumeApi.compilePreviewPdf(content, resumeState.template),
-        resumeApi.getLatexSource(content, resumeState.template).catch(() => ""),
-      ]);
+        shouldFetchCode 
+          ? resumeApi.getLatexSource(content, resumeState.template).catch(() => "")
+          : Promise.resolve(latexSource || "")
+      ];
+
+      const [blob, source] = await Promise.all(requests);
+
+      // Discard stale out-of-sequence responses
+      if (seq !== compileSeqRef.current) return;
 
       const url = URL.createObjectURL(blob);
       setPdfBlobUrl((prev) => {
         if (prev) URL.revokeObjectURL(prev);
         return url;
       });
-      setLatexSource(source);
+      if (source) {
+        setLatexSource(source);
+      }
     } catch (error: any) {
+      if (seq !== compileSeqRef.current) return;
       console.error("Compilation error:", error);
       const msg = getErrorMessage(error, "Failed to compile document. Please check your fields.");
       setCompileError(msg);
-      toast.error(msg);
+      if (options.isManual) {
+        toast.error(msg);
+      }
     } finally {
-      setIsCompiling(false);
+      if (seq === compileSeqRef.current) {
+        setIsCompiling(false);
+      }
     }
-  }, [getResumePayload, resumeState.template]);
+  }, [getResumePayload, resumeState.template, previewMode, latexSource]);
 
-  // Initial compilation when builder is loaded or template/data/order changes
+  // Reactive auto-compilation with adaptive debounce (150ms on template switch, 1200ms on typing)
   useEffect(() => {
     if (!resumeState.isLoading) {
+      const isTemplateChange = prevTemplateRef.current !== resumeState.template;
+      prevTemplateRef.current = resumeState.template;
+
+      const delay = isTemplateChange ? 150 : 1200;
       const timer = setTimeout(() => {
         handleCompile();
-      }, 300);
+      }, delay);
       return () => clearTimeout(timer);
     }
   }, [
@@ -273,24 +295,42 @@ export default function ResumeBuilderPage() {
     resumeState.isLoading,
     resumeState.template,
     resumeState.currentResumeId,
-    resumeState.personalInfoData?.full_name,
-    resumeState.experienceData?.length,
-    resumeState.skillData?.length,
+    resumeState.personalInfoData,
+    resumeState.professionalSummaryData,
+    resumeState.experienceData,
+    resumeState.educationData,
+    resumeState.projectData,
+    resumeState.skillData,
     resumeState.sectionOrder,
     resumeState.sectionVisibility,
   ]);
 
-  const handleToggleMode = (mode: "preview" | "code") => {
+  const handleToggleMode = async (mode: "preview" | "code") => {
     setPreviewMode(mode);
-    if (!latexSource) {
-      handleCompile();
+    if (mode === "code" && !latexSource) {
+      try {
+        const source = await resumeApi.getLatexSource(getResumePayload(), resumeState.template);
+        setLatexSource(source);
+      } catch {
+        // Fallback to full compile
+        handleCompile({ fetchCode: true });
+      }
     }
   };
 
   const handleCopyCode = async () => {
-    if (!latexSource) return;
+    let sourceToCopy = latexSource;
+    if (!sourceToCopy) {
+      try {
+        sourceToCopy = await resumeApi.getLatexSource(getResumePayload(), resumeState.template);
+        setLatexSource(sourceToCopy);
+      } catch {
+        toast.error("Failed to generate source code");
+        return;
+      }
+    }
     try {
-      await navigator.clipboard.writeText(latexSource);
+      await navigator.clipboard.writeText(sourceToCopy);
       setCopiedCode(true);
       toast.success("Code copied to clipboard!");
       setTimeout(() => setCopiedCode(false), 2000);
@@ -299,9 +339,18 @@ export default function ResumeBuilderPage() {
     }
   };
 
-  const handleDownloadTex = () => {
-    if (!latexSource) return;
-    const blob = new Blob([latexSource], { type: "text/plain;charset=utf-8" });
+  const handleDownloadTex = async () => {
+    let sourceToDownload = latexSource;
+    if (!sourceToDownload) {
+      try {
+        sourceToDownload = await resumeApi.getLatexSource(getResumePayload(), resumeState.template);
+        setLatexSource(sourceToDownload);
+      } catch {
+        toast.error("Failed to generate source code");
+        return;
+      }
+    }
+    const blob = new Blob([sourceToDownload], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -482,7 +531,7 @@ export default function ResumeBuilderPage() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleCompile}
+                onClick={() => handleCompile({ isManual: true })}
                 disabled={isCompiling}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-[#001BB7] hover:bg-[#001BB7]/90 text-white rounded-xl text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
               >
@@ -554,7 +603,7 @@ export default function ResumeBuilderPage() {
                   <div className="text-red-500 font-bold text-sm">Compilation Failed</div>
                   <p className="text-xs text-gray-500 max-w-md">{compileError}</p>
                   <button
-                    onClick={handleCompile}
+                    onClick={() => handleCompile({ isManual: true })}
                     className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-all cursor-pointer"
                   >
                     Retry Compile
