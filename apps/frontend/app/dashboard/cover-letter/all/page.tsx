@@ -161,8 +161,7 @@ export default function AllCoverLettersPage() {
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Instantly generate a cover letter based on your profile and target job.</p>
             </div>
           </div>
-          <button 
-            type="button"
+          <Button1 
             onClick={() => {
               if (!isPro && coverLettersList.length >= 3) {
                 setShowProModal(true);
@@ -170,12 +169,10 @@ export default function AllCoverLettersPage() {
               }
               router.push("/dashboard/cover-letter?magic=true");
             }}
-            className="mt-8 block w-full text-left"
+            className="w-full py-3 rounded-xl flex items-center justify-center gap-2 font-semibold mt-8"
           >
-            <Button1 className="w-full py-3 rounded-xl flex items-center justify-center gap-2 font-semibold">
-               Generate via AI <Sparkles size={16} />
-            </Button1>
-          </button>
+             Generate via AI <Sparkles size={16} />
+          </Button1>
         </motion.div>
       </div>
 
