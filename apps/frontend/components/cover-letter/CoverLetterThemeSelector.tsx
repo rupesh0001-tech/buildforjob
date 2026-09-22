@@ -9,12 +9,13 @@ import { useAppSelector } from "@/store/hooks";
 import { ProPlanModal } from "@/components/general/ProPlanModal";
 
 const templates = [
-  { name: "Classic", id: "classic" },
-  { name: "Modern", id: "modern" },
-  { name: "Minimal", id: "minimal" },
+  { name: "Executive Column", id: "latex-executive" },
+  { name: "ModernCV Casual", id: "latex-moderncv" },
+  { name: "Classic Minimal", id: "latex-classic" },
+  { name: "Tech Accent", id: "latex-tech" },
 ];
 
-export const FREE_COVER_LETTER_TEMPLATES = ["modern"];
+export const FREE_COVER_LETTER_TEMPLATES = ["latex-executive", "latex-classic"];
 
 const CoverLetterThemeSelector = () => {
   const dispatch = useDispatch();

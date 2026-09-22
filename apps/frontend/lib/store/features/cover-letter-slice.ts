@@ -56,7 +56,7 @@ const initialState: CoverLetterState = {
   },
   manualContent: "",
   signOff: "",
-  template: "Modern",
+  template: "latex-executive",
   coverLettersList: [],
   currentId: null,
   title: "Untitled Cover Letter",

@@ -24,9 +24,16 @@ const CoverLetterPreview = ({ stateOverride }: { stateOverride?: any }) => {
   };
 
   return (
-    <div className="cover-letter-preview-container bg-white border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-2xl">
-      <div className="mobile-scale-wrapper">
-        <div id="cover-letter-preview" className="print:shadow-none print:border-none w-full min-h-[1123px]">
+    <div 
+      className="cover-letter-preview-container bg-white border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-2xl"
+      style={{
+        isolation: 'isolate',
+        transform: 'translateZ(0)',
+        WebkitMaskImage: '-webkit-radial-gradient(white, black)',
+      }}
+    >
+      <div className="mobile-scale-wrapper rounded-xl overflow-hidden">
+        <div id="cover-letter-preview" className="print:shadow-none print:border-none w-full min-h-[1123px] rounded-xl overflow-hidden">
           {renderTemplate()}
         </div>
       </div>
