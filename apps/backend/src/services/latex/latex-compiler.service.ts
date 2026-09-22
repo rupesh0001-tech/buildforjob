@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
+import crypto from 'crypto';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -11,6 +12,29 @@ export interface CompileResult {
   pdfBuffer?: Buffer;
   error?: string;
   logs?: string;
+}
+
+// In-memory LRU cache for compiled LaTeX PDFs (max 100 items)
+const MAX_CACHE_SIZE = 100;
+const pdfCompilationCache = new Map<string, { buffer: Buffer; logs?: string; timestamp: number }>();
+
+function getCachedPdf(hash: string): { buffer: Buffer; logs?: string } | null {
+  const cached = pdfCompilationCache.get(hash);
+  if (cached) {
+    // Refresh LRU order
+    pdfCompilationCache.delete(hash);
+    pdfCompilationCache.set(hash, cached);
+    return cached;
+  }
+  return null;
+}
+
+function setCachedPdf(hash: string, buffer: Buffer, logs?: string) {
+  if (pdfCompilationCache.size >= MAX_CACHE_SIZE) {
+    const oldestKey = pdfCompilationCache.keys().next().value;
+    if (oldestKey) pdfCompilationCache.delete(oldestKey);
+  }
+  pdfCompilationCache.set(hash, { buffer, logs, timestamp: Date.now() });
 }
 
 export class LatexCompilerService {
@@ -25,6 +49,17 @@ export class LatexCompilerService {
     texSource: string,
     options: { timeoutMs?: number } = {}
   ): Promise<CompileResult> {
+    // Check SHA-256 cache first
+    const sourceHash = crypto.createHash('sha256').update(texSource).digest('hex');
+    const cached = getCachedPdf(sourceHash);
+    if (cached) {
+      return {
+        success: true,
+        pdfBuffer: cached.buffer,
+        logs: cached.logs,
+      };
+    }
+
     const timeoutMs = options.timeoutMs || 45000;
     const workDir = path.join(os.tmpdir(), `bfj-latex-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`);
 
@@ -69,10 +104,12 @@ export class LatexCompilerService {
       const pdfPath = path.join(workDir, 'resume.pdf');
       try {
         const pdfBuffer = await fs.readFile(pdfPath);
+        const logs = stdout + '\n' + stderr;
+        setCachedPdf(sourceHash, pdfBuffer, logs);
         return {
           success: true,
           pdfBuffer,
-          logs: stdout + '\n' + stderr,
+          logs,
         };
       } catch {
         return {
