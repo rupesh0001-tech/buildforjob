@@ -35,4 +35,6 @@ pnpm-debug.log*
 .DS_Store
 *.swp
 prompt.md
+uploads/
+apps/uploads/
 
