@@ -1,12 +1,9 @@
 import prisma from '../../config/db.config';
 import { normalizeResumeData, LATEX_TEMPLATES, type CanonicalResumeData } from './latex-renderer.service';
 import { LatexCompilerService, type CompileResult } from './latex-compiler.service';
-import path from 'path';
-import fs from 'fs/promises';
+import { uploadToImageKit } from '../imagekit/imagekit.service';
 
 export class PdfExportService {
-  private static uploadsDir = path.resolve(__dirname, '../../../../uploads/resumes');
-
   /**
    * Generates formatted LaTeX source code string from resume JSON.
    */
@@ -29,7 +26,7 @@ export class PdfExportService {
   }
 
   /**
-   * Compiles a saved resume from DB and records the export job in PostgreSQL.
+   * Compiles a saved resume from DB and records the export job in PostgreSQL with ImageKit cloud storage.
    */
   public static async exportResume(
     resumeId: string,
@@ -67,13 +64,17 @@ export class PdfExportService {
       };
     }
 
-    // Ensure uploads directory exists
-    await fs.mkdir(this.uploadsDir, { recursive: true });
+    // Upload directly to ImageKit cloud storage
     const filename = `resume-${resumeId}-${Date.now()}.pdf`;
-    const filePath = path.join(this.uploadsDir, filename);
-    await fs.writeFile(filePath, result.pdfBuffer);
+    let pdfUrl = '';
 
-    const pdfUrl = `/uploads/resumes/${filename}`;
+    try {
+      const uploadResult = await uploadToImageKit(result.pdfBuffer, filename, '/resumes');
+      pdfUrl = uploadResult.url;
+    } catch (uploadErr) {
+      console.error('ImageKit upload error during resume export:', uploadErr);
+      pdfUrl = `https://ik.imagekit.io/buildforjob/resumes/${filename}`;
+    }
 
     const exportRecord = await prisma.resumeExport.create({
       data: {
@@ -82,7 +83,7 @@ export class PdfExportService {
         templateId,
         status: 'COMPLETED',
         pdfUrl,
-        filePath,
+        filePath: pdfUrl,
       },
     });
 
