@@ -32,6 +32,8 @@ export interface CanonicalResumeData {
   projects: {
     name: string;
     techStack?: string;
+    liveUrl?: string;
+    githubUrl?: string;
     link?: string;
     description: string;
     bullets: string[];
@@ -49,6 +51,7 @@ export interface CanonicalResumeData {
     projects: boolean;
     skills: boolean;
   };
+  sectionOrder: string[];
 }
 
 export function normalizeResumeData(input: any): CanonicalResumeData {
@@ -110,7 +113,9 @@ export function normalizeResumeData(input: any): CanonicalResumeData {
     return {
       name: proj.name || 'Project Name',
       techStack: proj.techStack || proj.tech_stack || '',
-      link: proj.link || '',
+      liveUrl: proj.liveUrl || proj.live_url || proj.demoUrl || '',
+      githubUrl: proj.githubUrl || proj.github_url || proj.repoUrl || '',
+      link: proj.link || proj.url || '',
       description: desc,
       bullets: bullets.length > 0 ? bullets : [desc || 'Project overview and outcomes.'],
     };
@@ -135,6 +140,16 @@ export function normalizeResumeData(input: any): CanonicalResumeData {
     skills: vis.skills !== false,
   };
 
+  // Section Order
+  const defaultOrder = ['summary', 'education', 'experience', 'projects', 'skills'];
+  const rawOrder = content.sectionOrder || content.section_order;
+  let sectionOrder = defaultOrder;
+  if (Array.isArray(rawOrder) && rawOrder.length > 0) {
+    const filtered = rawOrder.filter(k => defaultOrder.includes(k));
+    const missing = defaultOrder.filter(k => !filtered.includes(k));
+    sectionOrder = [...filtered, ...missing];
+  }
+
   return {
     name,
     email: personal.email || '',
@@ -152,6 +167,7 @@ export function normalizeResumeData(input: any): CanonicalResumeData {
     rawSkills,
     accentColor: content.accentColor || '#0E5484',
     sectionVisibility,
+    sectionOrder,
   };
 }
 
@@ -189,6 +205,60 @@ export const LATEX_TEMPLATES: Record<string, { id: string; name: string; descrip
 };
 
 // ==========================================
+// Project Links Formatting Helpers
+// ==========================================
+function formatJakeProjectLinks(proj: CanonicalResumeData['projects'][0]): string {
+  const parts: string[] = [`\\textbf{${escapeLatex(proj.name)}}`];
+  if (proj.githubUrl) {
+    parts.push(`\\href{${escapeLatexUrl(proj.githubUrl)}}{\\underline{GitHub}}`);
+  }
+  if (proj.liveUrl) {
+    parts.push(`\\href{${escapeLatexUrl(proj.liveUrl)}}{\\underline{Live Demo}}`);
+  }
+  if (!proj.githubUrl && !proj.liveUrl && proj.link) {
+    parts.push(`\\href{${escapeLatexUrl(proj.link)}}{\\underline{Link}}`);
+  }
+  if (proj.techStack) {
+    parts.push(`\\emph{${escapeLatex(proj.techStack)}}`);
+  }
+  return parts.join(' $|$ ');
+}
+
+function formatFaangProjectItem(proj: CanonicalResumeData['projects'][0]): string {
+  const linkBadges: string[] = [];
+  if (proj.githubUrl) {
+    linkBadges.push(`\\href{${escapeLatexUrl(proj.githubUrl)}}{\\underline{GitHub}}`);
+  }
+  if (proj.liveUrl) {
+    linkBadges.push(`\\href{${escapeLatexUrl(proj.liveUrl)}}{\\underline{Live Demo}}`);
+  }
+  if (!proj.githubUrl && !proj.liveUrl && proj.link) {
+    linkBadges.push(`\\href{${escapeLatexUrl(proj.link)}}{\\underline{Link}}`);
+  }
+  const linksStr = linkBadges.length > 0 ? ` [${linkBadges.join(' | ')}]` : '';
+  const techStr = proj.techStack ? ` \\emph{(${escapeLatex(proj.techStack)})}` : '';
+  const bulletsStr = proj.bullets.map(b => escapeLatex(b)).join(' ');
+  return `\\item \\textbf{${escapeLatex(proj.name)}}${linksStr}.${techStr} ${bulletsStr}`;
+}
+
+function formatCorporateProjectHeading(proj: CanonicalResumeData['projects'][0]): { title: string; subtitle: string } {
+  const links: string[] = [];
+  if (proj.githubUrl) {
+    links.push(`\\href{${escapeLatexUrl(proj.githubUrl)}}{\\underline{GitHub}}`);
+  }
+  if (proj.liveUrl) {
+    links.push(`\\href{${escapeLatexUrl(proj.liveUrl)}}{\\underline{Live Demo}}`);
+  }
+  if (!proj.githubUrl && !proj.liveUrl && proj.link) {
+    links.push(`\\href{${escapeLatexUrl(proj.link)}}{\\underline{Link}}`);
+  }
+  const linksStr = links.length > 0 ? ` $|$ ${links.join(' $|$ ')}` : '';
+  const title = `\\textbf{${escapeLatex(proj.name)}}${linksStr}`;
+  const subtitle = proj.techStack ? escapeLatex(proj.techStack) : 'Project Details';
+  return { title, subtitle };
+}
+
+// ==========================================
 // 1. Template: Classic ATS (f1.txt - Jake Gutierrez)
 // ==========================================
 function renderJakeTemplate(data: CanonicalResumeData): string {
@@ -198,6 +268,17 @@ function renderJakeTemplate(data: CanonicalResumeData): string {
   if (data.linkedin) headerLinks.push(`\\href{${escapeLatexUrl(data.linkedin)}}{\\underline{${escapeLatex(data.linkedin.replace(/^https?:\/\/(www\.)?/, ''))}}}`);
   if (data.github) headerLinks.push(`\\href{${escapeLatexUrl(data.github)}}{\\underline{${escapeLatex(data.github.replace(/^https?:\/\/(www\.)?/, ''))}}}`);
   if (data.website) headerLinks.push(`\\href{${escapeLatexUrl(data.website)}}{\\underline{${escapeLatex(data.website.replace(/^https?:\/\/(www\.)?/, ''))}}}`);
+
+  let summarySection = '';
+  if (data.sectionVisibility.summary && data.summary) {
+    summarySection = `
+%-----------SUMMARY-----------
+\\section{Summary}
+  \\resumeSubHeadingListStart
+    \\item\\small{${escapeLatex(data.summary)}}
+  \\resumeSubHeadingListEnd
+`;
+  }
 
   let educationSection = '';
   if (data.sectionVisibility.education && data.education.length > 0) {
@@ -235,7 +316,7 @@ ${exp.bullets.map(b => `        \\resumeItem{${escapeLatex(b)}}`).join('\n')}
 \\section{Projects}
     \\resumeSubHeadingListStart
 ${data.projects.map(proj => `      \\resumeProjectHeading
-          {\\textbf{${escapeLatex(proj.name)}}${proj.techStack ? ` $|$ \\emph{${escapeLatex(proj.techStack)}}` : ''}}{}
+          {${formatJakeProjectLinks(proj)}}{}
           \\resumeItemListStart
 ${proj.bullets.map(b => `            \\resumeItem{${escapeLatex(b)}}`).join('\n')}
           \\resumeItemListEnd`).join('\n')}
@@ -255,6 +336,15 @@ ${proj.bullets.map(b => `            \\resumeItem{${escapeLatex(b)}}`).join('\n'
  \\end{itemize}
 `;
   }
+
+  const sectionsMap: Record<string, string> = {
+    summary: summarySection,
+    education: educationSection,
+    experience: experienceSection,
+    projects: projectSection,
+    skills: skillsSection,
+  };
+  const bodySections = data.sectionOrder.map(k => sectionsMap[k] || '').filter(Boolean).join('\n');
 
   return `%-------------------------
 % Resume in Latex
@@ -338,10 +428,7 @@ ${proj.bullets.map(b => `            \\resumeItem{${escapeLatex(b)}}`).join('\n'
     \\small ${headerLinks.join(' $|$ ')}
 \\end{center}
 
-${educationSection}
-${experienceSection}
-${projectSection}
-${skillsSection}
+${bodySections}
 
 \\end{document}
 `;
@@ -407,10 +494,19 @@ ${exp.bullets.map(b => `     \\item ${escapeLatex(b)}`).join('\n')}
     projectSection = `
 \\begin{rSection}{PROJECTS}
 \\vspace{-1.25em}
-${data.projects.map(proj => `\\item \\textbf{${escapeLatex(proj.name)}.} ${proj.techStack ? `\\emph{(${escapeLatex(proj.techStack)})} ` : ''}${proj.bullets.map(b => escapeLatex(b)).join(' ')}`).join('\n')}
+${data.projects.map(proj => formatFaangProjectItem(proj)).join('\n')}
 \\end{rSection}
 `;
   }
+
+  const sectionsMap: Record<string, string> = {
+    summary: summarySection,
+    education: educationSection,
+    experience: experienceSection,
+    projects: projectSection,
+    skills: skillsSection,
+  };
+  const bodySections = data.sectionOrder.map(k => sectionsMap[k] || '').filter(Boolean).join('\n');
 
   return `\\documentclass{resume}
 
@@ -424,11 +520,7 @@ ${addressLinks.length > 0 ? `\\address{${addressLinks.join(' \\\\ ')}}` : ''}
 
 \\begin{document}
 
-${summarySection}
-${educationSection}
-${skillsSection}
-${experienceSection}
-${projectSection}
+${bodySections}
 
 \\end{document}
 `;
@@ -495,15 +587,27 @@ ${data.education.map(edu => `    \\resumeSubheading
 %-----------PROJECTS-----------------
 \\section{Projects}
   \\resumeSubHeadingListStart
-${data.projects.map(proj => `    \\resumeSubheading
-      {${escapeLatex(proj.name)}}{${proj.techStack ? escapeLatex(proj.techStack) : ''}}
-      {Project Details}{}
+${data.projects.map(proj => {
+  const { title, subtitle } = formatCorporateProjectHeading(proj);
+  return `    \\resumeSubheading
+      {${title}}{}
+      {\\emph{${subtitle}}}{}
       \\resumeItemListStart
 ${proj.bullets.map(b => `        \\resumeItem{${escapeLatex(b)}}`).join('\n')}
-      \\resumeItemListEnd`).join('\n')}
+      \\resumeItemListEnd`;
+}).join('\n')}
   \\resumeSubHeadingListEnd
 `;
   }
+
+  const sectionsMap: Record<string, string> = {
+    summary: summarySection,
+    education: educationSection,
+    experience: experienceSection,
+    projects: projectSection,
+    skills: skillsSection,
+  };
+  const bodySections = data.sectionOrder.map(k => sectionsMap[k] || '').filter(Boolean).join('\n');
 
   return `%-------------------------
 % Resume in Latex
@@ -574,11 +678,7 @@ ${proj.bullets.map(b => `        \\resumeItem{${escapeLatex(b)}}`).join('\n')}
   ${data.location ? escapeLatex(data.location) : ''} & Mobile : ${escapeLatex(data.phone)}\\\\
 \\end{tabular*}
 
-${summarySection}
-${experienceSection}
-${skillsSection}
-${educationSection}
-${projectSection}
+${bodySections}
 
 \\end{document}
 `;
@@ -594,6 +694,17 @@ function renderExecutiveTemplate(data: CanonicalResumeData): string {
   if (data.linkedin) headerParts.push(`\\href{${escapeLatexUrl(data.linkedin)}}{\\color{blue}{${escapeLatex(data.linkedin.replace(/^https?:\/\/(www\.)?/, ''))}}}`);
   if (data.github) headerParts.push(`\\href{${escapeLatexUrl(data.github)}}{\\color{blue}{${escapeLatex(data.github.replace(/^https?:\/\/(www\.)?/, ''))}}}`);
   if (data.website) headerParts.push(`\\href{${escapeLatexUrl(data.website)}}{\\color{blue}{${escapeLatex(data.website.replace(/^https?:\/\/(www\.)?/, ''))}}}`);
+
+  let summarySection = '';
+  if (data.sectionVisibility.summary && data.summary) {
+    summarySection = `
+%-----------SUMMARY-----------
+\\section{\\color{airforceblue}SUMMARY}
+ \\begin{itemize}[leftmargin=0in, label={}]
+    \\small{\\item{${escapeLatex(data.summary)}}}
+ \\end{itemize}
+`;
+  }
 
   let educationSection = '';
   if (data.sectionVisibility.education && data.education.length > 0) {
@@ -644,13 +755,22 @@ ${exp.bullets.map(b => `        \\resumeItem{${escapeLatex(b)}}`).join('\n')}
 \\section{\\color{airforceblue}PROJECTS}
     \\resumeSubHeadingListStart
 ${data.projects.map(proj => `      \\resumeProjectHeading
-          {\\textbf{${escapeLatex(proj.name)}}${proj.techStack ? ` $|$ \\emph{${escapeLatex(proj.techStack)}}` : ''}}{}
+          {${formatJakeProjectLinks(proj)}}{}
           \\resumeItemListStart
 ${proj.bullets.map(b => `            \\resumeItem{${escapeLatex(b)}}`).join('\n')}
           \\resumeItemListEnd`).join('\n')}
     \\resumeSubHeadingListEnd
 `;
   }
+
+  const sectionsMap: Record<string, string> = {
+    summary: summarySection,
+    education: educationSection,
+    experience: experienceSection,
+    projects: projectSection,
+    skills: skillsSection,
+  };
+  const bodySections = data.sectionOrder.map(k => sectionsMap[k] || '').filter(Boolean).join('\n');
 
   return `%-------------------------
 % Resume in Latex
@@ -746,10 +866,7 @@ ${proj.bullets.map(b => `            \\resumeItem{${escapeLatex(b)}}`).join('\n'
     \\vspace{-7pt}
 \\end{center}
 
-${educationSection}
-${skillsSection}
-${experienceSection}
-${projectSection}
+${bodySections}
 
 \\end{document}
 `;
@@ -759,6 +876,19 @@ ${projectSection}
 // 5. Template: Clean Tech Minimal (f5.txt)
 // ==========================================
 function renderMinimalTemplate(data: CanonicalResumeData): string {
+  let summarySection = '';
+  if (data.sectionVisibility.summary && data.summary) {
+    summarySection = `
+\\begin{ResumeSection}{summary}
+    \\begin{ResumeSubsection}{org=Profile}
+        \\begin{itemize}
+            \\item ${escapeLatex(data.summary)}
+        \\end{itemize}
+    \\end{ResumeSubsection}
+\\end{ResumeSection}
+`;
+  }
+
   let skillsSection = '';
   if (data.sectionVisibility.skills && data.rawSkills.length > 0) {
     skillsSection = `
@@ -804,11 +934,27 @@ ${data.education.map(edu => `    \\begin{ResumeSubsection}{org={${escapeLatex(ed
     projectSection = `
 \\begin{ResumeSection}{projects}
     \\begin{itemize}
-${data.projects.map(proj => `        \\item \\textbf{${escapeLatex(proj.name)}}: ${proj.bullets.map(b => escapeLatex(b)).join(' ')}`).join('\n')}
+${data.projects.map(proj => {
+  const links: string[] = [];
+  if (proj.githubUrl) links.push(`\\href{${escapeLatexUrl(proj.githubUrl)}}{\\underline{GitHub}}`);
+  if (proj.liveUrl) links.push(`\\href{${escapeLatexUrl(proj.liveUrl)}}{\\underline{Live Demo}}`);
+  if (!proj.githubUrl && !proj.liveUrl && proj.link) links.push(`\\href{${escapeLatexUrl(proj.link)}}{\\underline{Link}}`);
+  const linksStr = links.length > 0 ? ` (${links.join(', ')})` : '';
+  return `        \\item \\textbf{${escapeLatex(proj.name)}}${linksStr}: ${proj.bullets.map(b => escapeLatex(b)).join(' ')}`;
+}).join('\n')}
     \\end{itemize}
 \\end{ResumeSection}
 `;
   }
+
+  const sectionsMap: Record<string, string> = {
+    summary: summarySection,
+    education: educationSection,
+    experience: experienceSection,
+    projects: projectSection,
+    skills: skillsSection,
+  };
+  const bodySections = data.sectionOrder.map(k => sectionsMap[k] || '').filter(Boolean).join('\n');
 
   return `\\documentclass{resume}
 \\usepackage[hidelinks]{hyperref}
@@ -822,11 +968,9 @@ ${data.linkedin ? `\\contact{\\href{${escapeLatexUrl(data.linkedin)}}{${escapeLa
 \\begin{document}
 \\makeheader
 
-${skillsSection}
-${experienceSection}
-${educationSection}
-${projectSection}
+${bodySections}
 
 \\end{document}
 `;
 }
+

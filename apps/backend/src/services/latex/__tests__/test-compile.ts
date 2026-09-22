@@ -49,6 +49,8 @@ async function testAllTemplates() {
       {
         name: "BuildForJob Platform",
         techStack: "Next.js, Node.js, PostgreSQL, Docker",
+        liveUrl: "https://buildforjob.com",
+        githubUrl: "https://github.com/rupesh0001-tech/buildforjob",
         description: "Engineered high-performance resume builder with automated LaTeX compilation and PDF export.",
       }
     ],
@@ -59,7 +61,8 @@ async function testAllTemplates() {
       education: true,
       projects: true,
       skills: true,
-    }
+    },
+    sectionOrder: ["experience", "skills", "projects", "education", "summary"]
   };
 
   const canonical = normalizeResumeData(sampleData);
