@@ -32,6 +32,9 @@ export interface ResumeEducation {
 export interface ResumeProject {
   name: string;
   techStack: string;
+  liveUrl?: string;
+  githubUrl?: string;
+  link?: string;
   description: string;
   _id?: string;
 }
@@ -53,6 +56,7 @@ export interface ResumeData {
   project: ResumeProject[];
   skills: string[];
   sectionVisibility: ResumeSectionVisibility;
+  section_order?: string[];
 }
 
 // Editor state saved to the server / store (camelCase)
@@ -66,6 +70,7 @@ export interface EditorResumeContent {
   template: string;
   accentColor: string;
   sectionVisibility: ResumeSectionVisibility;
+  sectionOrder?: string[];
 }
 
 export interface Resume {

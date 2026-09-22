@@ -6,10 +6,9 @@ import { RootState } from "@/lib/store/store";
 import { setProject, Project as ProjectType } from "@/lib/store/features/resume-slice";
 import FormInput from "../FormInput";
 import FormTextArea from "../FormTextArea";
-import { FileSignature, Layers, Trash2, Plus, Code, Sparkles, Loader2 } from '@/lib/icons';
+import { FileSignature, Trash2, Plus, Code, Sparkles, Loader2, Globe, Link as LinkIcon, ExternalLink, Edit } from '@/lib/icons';
 import { generateAI } from "@/apis/ai.api";
 import { toast } from "sonner";
-import { Edit } from "lucide-react";
 import { deductTokens } from "@/store/slices/authSlice";
 
 interface ProjectProps {
@@ -23,6 +22,8 @@ const Project = ({ setFormTab }: ProjectProps) => {
   const [formData, setFormData] = useState<ProjectType>({
     name: "",
     techStack: "",
+    liveUrl: "",
+    githubUrl: "",
     description: "",
   });
 
@@ -57,6 +58,8 @@ const Project = ({ setFormTab }: ProjectProps) => {
     setFormData({
       name: "",
       techStack: "",
+      liveUrl: "",
+      githubUrl: "",
       description: "",
     });
   };
@@ -67,7 +70,13 @@ const Project = ({ setFormTab }: ProjectProps) => {
       return pKey === key;
     });
     if (proj) {
-      setFormData(proj);
+      setFormData({
+        name: proj.name || "",
+        techStack: proj.techStack || "",
+        liveUrl: proj.liveUrl || proj.link || "",
+        githubUrl: proj.githubUrl || "",
+        description: proj.description || "",
+      });
       setEditingId(key);
     }
   };
@@ -101,6 +110,8 @@ const Project = ({ setFormTab }: ProjectProps) => {
       setFormData({
         name: "",
         techStack: "",
+        liveUrl: "",
+        githubUrl: "",
         description: "",
       });
     }
@@ -112,7 +123,7 @@ const Project = ({ setFormTab }: ProjectProps) => {
 
   return (
     <div className="flex flex-col animate-in fade-in duration-500">
-      <div className="space-y-6">
+      <div className="space-y-4">
         <FormInput
           name="name"
           label="Project Name"
@@ -128,8 +139,28 @@ const Project = ({ setFormTab }: ProjectProps) => {
           icon={<Code size={16} />}
           value={formData.techStack}
           onChange={handleChange as any}
-          placeholder="React, Node.js, MongoDB"
+          placeholder="React, Node.js, PostgreSQL"
         />
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <FormInput
+            name="liveUrl"
+            label="Live Demo URL (Optional)"
+            icon={<Globe size={16} />}
+            value={formData.liveUrl || ""}
+            onChange={handleChange as any}
+            placeholder="https://myproject.com"
+          />
+
+          <FormInput
+            name="githubUrl"
+            label="GitHub URL (Optional)"
+            icon={<LinkIcon size={16} />}
+            value={formData.githubUrl || ""}
+            onChange={handleChange as any}
+            placeholder="https://github.com/user/repo"
+          />
+        </div>
 
         <FormTextArea
           name="description"
@@ -153,7 +184,7 @@ const Project = ({ setFormTab }: ProjectProps) => {
           Enhance Description with AI (-0.5 Credits)
         </button>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 pt-2">
           {editingId && (
             <button
               type="button"
@@ -162,6 +193,8 @@ const Project = ({ setFormTab }: ProjectProps) => {
                 setFormData({
                   name: "",
                   techStack: "",
+                  liveUrl: "",
+                  githubUrl: "",
                   description: "",
                 });
               }}
@@ -193,9 +226,37 @@ const Project = ({ setFormTab }: ProjectProps) => {
                 key={pKey}
                 className="p-4 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl flex justify-between items-start group"
               >
-                <div>
+                <div className="space-y-1">
                   <p className="font-bold text-gray-900 dark:text-white">{p.name}</p>
-                  <p className="text-sm text-primary dark:text-primary/80 font-medium">{p.techStack}</p>
+                  {p.techStack && (
+                    <p className="text-sm text-primary dark:text-primary/80 font-medium">{p.techStack}</p>
+                  )}
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {p.liveUrl && (
+                      <a
+                        href={p.liveUrl.startsWith('http') ? p.liveUrl : `https://${p.liveUrl}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400 hover:underline bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md"
+                      >
+                        <Globe size={11} />
+                        Live Demo
+                        <ExternalLink size={9} />
+                      </a>
+                    )}
+                    {p.githubUrl && (
+                      <a
+                        href={p.githubUrl.startsWith('http') ? p.githubUrl : `https://${p.githubUrl}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-medium text-purple-600 dark:text-purple-400 hover:underline bg-purple-50 dark:bg-purple-900/20 px-2 py-0.5 rounded-md"
+                      >
+                        <LinkIcon size={11} />
+                        GitHub
+                        <ExternalLink size={9} />
+                      </a>
+                    )}
+                  </div>
                   {p.description && <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 italic">{p.description}</p>}
                 </div>
                 <div className="flex gap-1">
@@ -233,3 +294,4 @@ const Project = ({ setFormTab }: ProjectProps) => {
 };
 
 export default Project;
+

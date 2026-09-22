@@ -214,7 +214,10 @@ export function PdfPreviewModal({
           </div>
 
           {/* Body Viewer */}
-          <div className="flex-1 bg-slate-100 dark:bg-[#08080c] relative overflow-hidden flex flex-col">
+          <div 
+            className="flex-1 bg-slate-100 dark:bg-[#08080c] relative overflow-hidden flex flex-col rounded-b-2xl"
+            style={{ isolation: 'isolate', transform: 'translateZ(0)', WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
+          >
             {isLoading ? (
               <div className="flex-1 flex flex-col items-center justify-center gap-4 text-center p-8">
                 <div className="w-14 h-14 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
@@ -255,7 +258,8 @@ export function PdfPreviewModal({
                 <iframe
                   id="pdf-preview-frame"
                   src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                  className="w-full h-full border-0"
+                  className="w-full h-full border-0 block rounded-b-2xl"
+                  style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
                   title="LaTeX PDF Preview"
                 />
               ) : (

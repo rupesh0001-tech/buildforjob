@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import ResumeForm from "@/components/resume-builder/ResumeForm";
+import ResumePreview from "@/components/resume-builder/ResumePreview";
 import { ArrowLeft, Download, Save, Clock, Loader2, Sparkles, Lock, Eye, Code2, Copy, Check, FileCode } from '@/lib/icons';
 import Link from "next/link";
 import { OptimizeModal } from "@/components/general/OptimizeModal";
@@ -104,98 +105,31 @@ export default function ResumeBuilderPage() {
         dispatch(fetchResumeById(id));
       }
     } else {
-      // If new resume, initialize with user profile data if available
-      if (user && !resumeState.personalInfoData?.full_name) {
-        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email?.split('@')[0] || "Your Name";
-        const starterData = {
-          personalInfoData: {
-            full_name: fullName,
-            email: user.email || "",
-            phone: user.phone || "+1 (555) 000-0000",
-            location: user.location || "San Francisco, CA",
-            linkedin: user.socialLinks?.linkedin || "linkedin.com/in/profile",
-            website: user.socialLinks?.website || user.socialLinks?.github || "github.com/profile",
-            profession: user.jobTitle || "Software Engineer",
-            image: user.avatarUrl || "",
-          },
-          professionalSummaryData: user.bio || "Passionate and results-driven Software Engineer with proven experience in building scalable web applications, distributed backend services, and high-performance cloud infrastructure.",
-          experienceData: (user.experience && user.experience.length > 0) ? user.experience.map((exp: any) => ({
-            company: exp.company,
-            position: exp.position,
-            startDate: exp.startDate || "2022",
-            endDate: exp.endDate || "Present",
-            description: exp.description || "• Led core architecture design and reduced latency by 35%\n• Collaborated with cross-functional teams to deliver critical production features",
-            is_current: exp.isCurrent ?? true,
-          })) : [
-            {
-              company: "Tech Innovations Inc.",
-              position: "Senior Software Engineer",
-              startDate: "2022",
-              endDate: "Present",
-              description: "• Architected distributed backend services processing 10M+ daily events\n• Optimized database query performance by 45% using Redis caching\n• Mentored 5 junior engineers and established CI/CD automated pipelines",
-              is_current: true,
-            }
-          ],
-          educationData: (user.education && user.education.length > 0) ? user.education.map((edu: any) => ({
-            institution: edu.institution,
-            degree: edu.degree,
-            field: edu.field,
-            graduation_date: edu.graduationDate || "2022",
-            gpa: edu.gpa || "3.8",
-            graduationType: (edu.graduationType as any) || "cgpa",
-          })) : [
-            {
-              institution: "University of Technology",
-              degree: "Bachelor of Science",
-              field: "Computer Science",
-              graduation_date: "2022",
-              gpa: "3.8",
-              graduationType: "cgpa"
-            }
-          ],
-          projectData: (user.projects && user.projects.length > 0) ? user.projects.map((p: any) => ({
-            name: p.name,
-            techStack: p.techStack || "TypeScript, React, Node.js",
-            description: p.description || "• Built end-to-end full-stack platform with real-time sync\n• Integrated payment processing with Stripe handling 50k+ transactions",
-          })) : [
-            {
-              name: "CloudScale Platform",
-              techStack: "React, Node.js, PostgreSQL, Docker",
-              description: "• Designed high-availability microservices architecture with 99.99% uptime\n• Implemented automated testing suite with 90%+ code coverage",
-            }
-          ],
-          skillData: (user.skills && user.skills.length > 0) 
-            ? user.skills.map((s: any) => s.name || s) 
-            : ["TypeScript", "JavaScript", "React", "Next.js", "Node.js", "PostgreSQL", "Docker", "Git", "REST APIs"],
-        };
-        dispatch(updateResumeState(starterData as any));
-      } else if (!id && !user && !resumeState.personalInfoData?.full_name) {
-        dispatch(resetResumeEditor());
-      }
-      if (titleParam) {
-        dispatch(setResumeTitle(titleParam));
-        setLocalTitle(titleParam);
-      }
+      // New empty resume - do not keep old state
+      dispatch(resetResumeEditor());
+      const title = titleParam || "Untitled Resume";
+      dispatch(setResumeTitle(title));
+      setLocalTitle(title);
     }
-  }, [id, titleParam, user, dispatch, resumeState.currentResumeId]);
+  }, [id, titleParam, dispatch]);
 
-  // Sync local title with store title when loaded
+  // Sync local title with store title when loaded from backend
   useEffect(() => {
-    if (resumeState.resumeTitle && !titleParam) {
+    if (id && resumeState.resumeTitle && !titleParam) {
       setLocalTitle(resumeState.resumeTitle);
     }
-  }, [resumeState.resumeTitle, titleParam]);
+  }, [id, resumeState.resumeTitle, titleParam]);
 
   useEffect(() => {
-    if (magic === "true" && user) {
+    if (magic === "true" && user && !id) {
       const resumeData = {
         personalInfoData: {
-          full_name: `${user.firstName} ${user.lastName}`,
-          email: user.email,
+          full_name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email?.split('@')[0] || "",
+          email: user.email || "",
           phone: user.phone || "",
           location: user.location || "",
           linkedin: user.socialLinks?.linkedin || "",
-          website: user.socialLinks?.website || "",
+          website: user.socialLinks?.website || user.socialLinks?.github || "",
           profession: user.jobTitle || "",
           image: user.avatarUrl || "",
         },
@@ -219,15 +153,17 @@ export default function ResumeBuilderPage() {
         projectData: (user.projects || []).map((p: any) => ({
           name: p.name,
           techStack: p.techStack || "",
+          liveUrl: p.liveUrl || p.demoUrl || p.link || "",
+          githubUrl: p.githubUrl || p.github || "",
           description: p.description || "",
         })),
-        skillData: (user.skills || []).map((s: any) => s.name),
+        skillData: (user.skills || []).map((s: any) => s.name || s),
       };
 
       dispatch(updateResumeState(resumeData as any));
       toast.success("Resume magically generated from your profile!");
     }
-  }, [magic, user, dispatch]);
+  }, [magic, user, dispatch, id]);
 
   const handleSave = async (isDraft: boolean, isVersion: boolean = false) => {
     setIsSaving(true);
@@ -241,7 +177,8 @@ export default function ResumeBuilderPage() {
       skillData: resumeState.skillData,
       template: resumeState.template,
       accentColor: resumeState.accentColor,
-      sectionVisibility: resumeState.sectionVisibility
+      sectionVisibility: resumeState.sectionVisibility,
+      sectionOrder: resumeState.sectionOrder || ["summary", "education", "experience", "projects", "skills"],
     };
 
     try {
@@ -292,7 +229,8 @@ export default function ResumeBuilderPage() {
     skillData: resumeState.skillData,
     template: resumeState.template,
     accentColor: resumeState.accentColor,
-    sectionVisibility: resumeState.sectionVisibility
+    sectionVisibility: resumeState.sectionVisibility,
+    sectionOrder: resumeState.sectionOrder || ["summary", "education", "experience", "projects", "skills"],
   }), [resumeState]);
 
   const handleCompile = useCallback(async () => {
@@ -322,7 +260,7 @@ export default function ResumeBuilderPage() {
     }
   }, [getResumePayload, resumeState.template]);
 
-  // Initial compilation when builder is loaded or template/data changes
+  // Initial compilation when builder is loaded or template/data/order changes
   useEffect(() => {
     if (!resumeState.isLoading) {
       const timer = setTimeout(() => {
@@ -338,6 +276,8 @@ export default function ResumeBuilderPage() {
     resumeState.personalInfoData?.full_name,
     resumeState.experienceData?.length,
     resumeState.skillData?.length,
+    resumeState.sectionOrder,
+    resumeState.sectionVisibility,
   ]);
 
   const handleToggleMode = (mode: "preview" | "code") => {
@@ -385,7 +325,7 @@ export default function ResumeBuilderPage() {
       
       let blob: Blob;
       if (resumeState.currentResumeId) {
-        blob = await resumeApi.exportPdf(resumeState.currentResumeId, resumeState.template);
+        blob = await resumeApi.exportPdf(resumeState.currentResumeId, resumeState.template, true);
       } else {
         blob = await resumeApi.compilePreviewPdf(content, resumeState.template);
       }
@@ -415,6 +355,7 @@ export default function ResumeBuilderPage() {
         pdf.save(`${localTitle.replace(/\s+/g, '_')}.pdf`);
         toast.success("PDF downloaded!");
       } catch (fallbackErr) {
+        console.error("Fallback PDF generation failed:", fallbackErr);
         toast.error("Failed to generate PDF download");
       }
     } finally {
@@ -577,10 +518,16 @@ export default function ResumeBuilderPage() {
           </div>
 
           {/* Main Card */}
-          <div className="w-fit bg-gray-50/50 dark:bg-black/20 rounded-3xl border border-gray-200 dark:border-white/10 p-0 overflow-hidden flex flex-col shadow-2xl">
+          <div 
+            className="w-[794px] bg-white rounded-2xl border border-gray-200/80 dark:border-white/10 overflow-hidden flex flex-col shadow-2xl relative"
+            style={{ isolation: 'isolate', transform: 'translateZ(0)', WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
+          >
             {previewMode === "preview" ? (
               pdfBlobUrl ? (
-                <div className="w-[794px] h-[1123px] bg-white rounded-2xl overflow-hidden relative shadow-inner">
+                <div 
+                  className="w-full h-[1123px] bg-white overflow-hidden rounded-2xl relative"
+                  style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
+                >
                   {isCompiling && (
                     <div className="absolute inset-0 bg-white/60 dark:bg-black/60 backdrop-blur-xs z-10 flex flex-col items-center justify-center gap-2">
                       <Loader2 size={24} className="animate-spin text-[#001BB7]" />
@@ -589,12 +536,13 @@ export default function ResumeBuilderPage() {
                   )}
                   <iframe
                     src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                    className="w-full h-full border-0"
+                    className="w-full h-full border-0 block rounded-2xl"
+                    style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
                     title="Resume PDF Preview"
                   />
                 </div>
               ) : isCompiling ? (
-                <div className="w-[794px] h-[1123px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8">
+                <div className="w-full h-[1123px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8 rounded-2xl">
                   <Loader2 className="animate-spin text-[#001BB7]" size={36} />
                   <div className="space-y-1">
                     <h4 className="text-sm font-bold text-gray-900 dark:text-white">Compiling PDF...</h4>
@@ -602,18 +550,18 @@ export default function ResumeBuilderPage() {
                   </div>
                 </div>
               ) : compileError ? (
-                <div className="w-[794px] h-[600px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8">
+                <div className="w-full h-[600px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8 rounded-2xl">
                   <div className="text-red-500 font-bold text-sm">Compilation Failed</div>
                   <p className="text-xs text-gray-500 max-w-md">{compileError}</p>
                   <button
                     onClick={handleCompile}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-all"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold hover:bg-blue-700 transition-all cursor-pointer"
                   >
                     Retry Compile
                   </button>
                 </div>
               ) : (
-                <div className="w-[794px] h-[1123px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8">
+                <div className="w-full h-[1123px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8 rounded-2xl">
                   <Loader2 className="animate-spin text-[#001BB7]" size={36} />
                   <div className="space-y-1">
                     <h4 className="text-sm font-bold text-gray-900 dark:text-white">Generating Resume Preview...</h4>
@@ -622,7 +570,7 @@ export default function ResumeBuilderPage() {
                 </div>
               )
             ) : (
-              <div className="w-[794px] min-h-[600px] max-h-[850px] bg-[#0f0f15] flex flex-col text-xs font-mono">
+              <div className="w-full min-h-[600px] max-h-[850px] bg-[#0f0f15] flex flex-col text-xs font-mono rounded-2xl overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2.5 bg-[#171722] border-b border-white/5 text-[11px] text-gray-400 select-none">
                   <span className="flex items-center gap-1.5 text-gray-300 font-sans">
                     <FileCode size={14} className="text-blue-400" />
@@ -656,6 +604,13 @@ export default function ResumeBuilderPage() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Hidden fallback HTML preview container for client-side rendering if needed */}
+      <div className="hidden">
+        <div id="resume-preview">
+          <ResumePreview />
         </div>
       </div>
 

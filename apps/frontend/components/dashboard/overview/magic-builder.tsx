@@ -259,7 +259,7 @@ export function MagicBuilder() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <button
-                    onClick={() => router.push("/dashboard/resume-builder")}
+                    onClick={() => router.push("/dashboard/resume-builder?magic=true")}
                     className="flex items-center justify-between p-6 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-3xl hover:border-indigo-500/50 group transition-all"
                   >
                     <div className="flex items-center gap-4">
@@ -269,7 +269,7 @@ export function MagicBuilder() {
                     <ExternalLink size={20} className="text-gray-400" />
                   </button>
                   <button
-                    onClick={() => router.push("/dashboard/cover-letter")}
+                    onClick={() => router.push("/dashboard/cover-letter?magic=true")}
                     className="flex items-center justify-between p-6 bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/10 rounded-3xl hover:border-indigo-500/50 group transition-all"
                   >
                     <div className="flex items-center gap-4">

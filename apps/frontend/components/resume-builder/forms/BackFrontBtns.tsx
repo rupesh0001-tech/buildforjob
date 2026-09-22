@@ -6,15 +6,16 @@ import { ChevronLeft, ChevronRight } from '@/lib/icons';
 interface BackFrontBtnsProps {
   setFormTab: (tab: number) => void;
   formTab: number;
+  maxTab?: number;
 }
 
-const BackFrontBtns = ({ setFormTab, formTab }: BackFrontBtnsProps) => {
+const BackFrontBtns = ({ setFormTab, formTab, maxTab = 6 }: BackFrontBtnsProps) => {
   const handleNext = () => setFormTab(formTab + 1);
   const handleBack = () => setFormTab(formTab - 1);
 
   return (
     <div className="flex gap-4 items-center ">
-      {formTab !== 1 && (
+      {formTab > 1 && (
         <button
           type="button"
           onClick={handleBack}
@@ -24,7 +25,7 @@ const BackFrontBtns = ({ setFormTab, formTab }: BackFrontBtnsProps) => {
           back
         </button>
       )}
-      {formTab !== 6 && (
+      {formTab < maxTab && (
         <button
           type="button"
           onClick={handleNext}

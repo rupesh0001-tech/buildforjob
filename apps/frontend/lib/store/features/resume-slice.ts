@@ -37,6 +37,9 @@ export interface Education {
 export interface Project {
   name: string;
   techStack: string;
+  liveUrl?: string;
+  githubUrl?: string;
+  link?: string;
   description: string;
   _id?: string;
 }
@@ -57,6 +60,7 @@ export interface ResumeState {
     projects: boolean;
     skills: boolean;
   };
+  sectionOrder: string[];
   // Backend integration state
   resumesList: Resume[];
   currentResumeId: string | null;
@@ -95,6 +99,7 @@ const initialState: ResumeState = {
     projects: true,
     skills: true,
   },
+  sectionOrder: ["summary", "education", "experience", "projects", "skills"],
   resumesList: [],
   currentResumeId: null,
   resumeTitle: "Untitled Resume",
@@ -214,6 +219,19 @@ export const resumeSlice = createSlice({
     setSectionVisibility: (state, action: PayloadAction<Partial<ResumeState["sectionVisibility"]>>) => {
       state.sectionVisibility = { ...state.sectionVisibility, ...action.payload };
     },
+    setSectionOrder: (state, action: PayloadAction<string[]>) => {
+      state.sectionOrder = action.payload;
+    },
+    moveSection: (state, action: PayloadAction<{ fromIndex: number; toIndex: number }>) => {
+      const { fromIndex, toIndex } = action.payload;
+      if (fromIndex >= 0 && fromIndex < state.sectionOrder.length && toIndex >= 0 && toIndex < state.sectionOrder.length) {
+        const item = state.sectionOrder[fromIndex];
+        const newOrder = [...state.sectionOrder];
+        newOrder.splice(fromIndex, 1);
+        newOrder.splice(toIndex, 0, item);
+        state.sectionOrder = newOrder;
+      }
+    },
     updateResumeState: (state, action: PayloadAction<Partial<ResumeState>>) => {
       return { ...state, ...action.payload };
     },
@@ -260,6 +278,7 @@ export const resumeSlice = createSlice({
           state.template = content.template || state.template;
           state.accentColor = content.accentColor || state.accentColor;
           state.sectionVisibility = content.sectionVisibility || state.sectionVisibility;
+          state.sectionOrder = content.sectionOrder || state.sectionOrder || ["summary", "education", "experience", "projects", "skills"];
         }
       })
       .addCase(fetchResumeById.rejected, (state, action) => {
@@ -296,6 +315,8 @@ export const {
   setTemplate,
   setAccentColor,
   setSectionVisibility,
+  setSectionOrder,
+  moveSection,
   updateResumeState,
   resetResumeEditor,
   setCurrentResumeId,

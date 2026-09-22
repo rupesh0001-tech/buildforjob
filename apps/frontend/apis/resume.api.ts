@@ -44,7 +44,7 @@ export const resumeApi = {
     return response.data;
   },
 
-  exportPdf: async (id: string, templateId?: string, download: boolean = false): Promise<any> => {
+  exportPdf: async (id: string, templateId?: string, download: boolean = true): Promise<Blob> => {
     if (download) {
       const response = await api.post(`/resumes/${id}/export`, { templateId, download: true }, {
         responseType: 'blob',
