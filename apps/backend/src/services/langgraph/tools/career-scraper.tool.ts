@@ -16,19 +16,22 @@ export interface ScrapedJobResult {
 }
 
 /**
- * Common company career portal search configurations
+ * Builds direct live career search & posting URLs for companies
  */
-const KNOWN_CAREER_URLS: Record<string, string> = {
-  google: "https://www.google.com/about/careers/applications/jobs/results",
-  amazon: "https://www.amazon.jobs/en/search",
-  microsoft: "https://careers.microsoft.com/us/en/search-results",
-  meta: "https://www.metacareers.com/jobs",
-  apple: "https://jobs.apple.com/en-us/search",
-  netflix: "https://jobs.netflix.com/search",
-  uber: "https://www.uber.com/us/en/careers/list",
-  stripe: "https://stripe.com/jobs/search",
-  spotify: "https://www.lifeatspotify.com/jobs",
-  airbnb: "https://careers.airbnb.com/positions",
+export const getDirectCareerUrl = (company: string, role: string): string => {
+  const norm = company.trim().toLowerCase();
+  const q = encodeURIComponent(role.trim());
+  if (norm.includes("google")) return `https://www.google.com/about/careers/applications/jobs/results/?q=${q}`;
+  if (norm.includes("amazon")) return `https://www.amazon.jobs/en/search?base_query=${q}`;
+  if (norm.includes("microsoft")) return `https://careers.microsoft.com/us/en/search-results?keywords=${q}`;
+  if (norm.includes("meta") || norm.includes("facebook")) return `https://www.metacareers.com/jobs?q=${q}`;
+  if (norm.includes("apple")) return `https://jobs.apple.com/en-us/search?search=${q}`;
+  if (norm.includes("netflix")) return `https://jobs.netflix.com/search?q=${q}`;
+  if (norm.includes("spotify")) return `https://www.lifeatspotify.com/jobs?q=${q}`;
+  if (norm.includes("uber")) return `https://www.uber.com/us/en/careers/list/?query=${q}`;
+  if (norm.includes("stripe")) return `https://stripe.com/jobs/search?query=${q}`;
+  if (norm.includes("airbnb")) return `https://careers.airbnb.com/positions/?query=${q}`;
+  return `https://www.google.com/search?q=${encodeURIComponent(`${company} ${role} careers jobs opening`)}`;
 };
 
 /**
@@ -40,11 +43,9 @@ export async function scrapeCompanyCareers(
   role: string,
   location?: string
 ): Promise<ScrapedJobResult> {
-  const normalizedCompany = company.trim().toLowerCase();
   const searchRole = role.trim();
   const queryLocation = location ? location.trim() : "Remote / Global";
-
-  const targetUrl = KNOWN_CAREER_URLS[normalizedCompany] || `https://${normalizedCompany}.com/careers`;
+  const targetUrl = getDirectCareerUrl(company, searchRole);
 
   // 1. Live web search & fetch across official career postings and job boards
   let scrapedSnippets: string[] = [];

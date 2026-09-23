@@ -25,6 +25,7 @@ import {
   Lock,
   Bot,
   ExternalLink,
+  Globe,
 } from '@/lib/icons';
 import { useRouter } from "next/navigation";
 import { checkATSScore, getATSSuggestions, getATSReports, unlockReportSuggestions } from "@/apis/ats.api";
@@ -268,6 +269,7 @@ export default function ATSCheckerPage() {
     jobDescription: string;
     requirements?: string[];
     responsibilities?: string[];
+    sourceUrl?: string;
   } | null>(null);
 
   // Dropdown Refs & States
@@ -1350,6 +1352,24 @@ export default function ATSCheckerPage() {
                         <li key={idx}>{req}</li>
                       ))}
                     </ul>
+                  </div>
+                )}
+
+                {scrapedPreview.sourceUrl && (
+                  <div className="flex items-center justify-between p-2.5 bg-blue-50/70 dark:bg-blue-950/30 rounded-xl border border-blue-500/20 text-xs">
+                    <span className="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5 truncate">
+                      <Globe size={13} className="text-blue-500 shrink-0" />
+                      Live Career Source:
+                    </span>
+                    <a
+                      href={scrapedPreview.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 shrink-0 cursor-pointer ml-2"
+                    >
+                      View Live Source
+                      <ExternalLink size={11} />
+                    </a>
                   </div>
                 )}
               </div>
