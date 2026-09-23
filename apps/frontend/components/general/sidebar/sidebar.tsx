@@ -9,7 +9,7 @@ import { useAppSelector } from "@/store/hooks";
 import { 
   LayoutDashboard, FileCheck, FilePlus, Wand2, 
   Files, History, Mail, Edit, MonitorUp, Globe, 
-  TrendingUp, Link as LinkIcon, Briefcase, User, Sparkles
+  TrendingUp, Link as LinkIcon, Briefcase, User, Sparkles, Bot, MessageSquare
 } from '@/lib/icons';
 
 interface SidebarProps {
@@ -59,6 +59,21 @@ export function Sidebar({ isOpen, onClose, isOverlay }: SidebarProps) {
         title: "Dashboard",
         items: [
           { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+        ]
+      },
+      {
+        title: "AI Assistant",
+        items: [
+          { 
+            name: "AI Navigator & Chat", 
+            href: "/dashboard/assistant", 
+            icon: Bot,
+            badge: (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md tracking-wider bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xs">
+                AI
+              </span>
+            )
+          },
         ]
       },
       {
