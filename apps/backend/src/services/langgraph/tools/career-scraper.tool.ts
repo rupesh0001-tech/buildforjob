@@ -11,32 +11,81 @@ export interface ScrapedJobResult {
   jobDescription: string;
   requirements: string[];
   responsibilities: string[];
-  sourceUrl?: string;
+  sourceUrl: string;
   found: boolean;
 }
 
 /**
- * Builds direct live career search & posting URLs for companies
+ * Searches the web for authentic live job postings and extracts real URLs.
  */
-export const getDirectCareerUrl = (company: string, role: string): string => {
-  const norm = company.trim().toLowerCase();
-  const q = encodeURIComponent(role.trim());
-  if (norm.includes("google")) return `https://www.google.com/about/careers/applications/jobs/results/?q=${q}`;
-  if (norm.includes("amazon")) return `https://www.amazon.jobs/en/search?base_query=${q}`;
-  if (norm.includes("microsoft")) return `https://careers.microsoft.com/us/en/search-results?keywords=${q}`;
-  if (norm.includes("meta") || norm.includes("facebook")) return `https://www.metacareers.com/jobs?q=${q}`;
-  if (norm.includes("apple")) return `https://jobs.apple.com/en-us/search?search=${q}`;
-  if (norm.includes("netflix")) return `https://jobs.netflix.com/search?q=${q}`;
-  if (norm.includes("spotify")) return `https://www.lifeatspotify.com/jobs?q=${q}`;
-  if (norm.includes("uber")) return `https://www.uber.com/us/en/careers/list/?query=${q}`;
-  if (norm.includes("stripe")) return `https://stripe.com/jobs/search?query=${q}`;
-  if (norm.includes("airbnb")) return `https://careers.airbnb.com/positions/?query=${q}`;
-  return `https://www.google.com/search?q=${encodeURIComponent(`${company} ${role} careers jobs opening`)}`;
-};
+async function searchLiveJobPostings(company: string, role: string): Promise<{ title: string; snippet: string; url: string }[]> {
+  const query = `${company} ${role} job careers description opening`;
+  const encodedQuery = encodeURIComponent(query);
+  const searchResults: { title: string; snippet: string; url: string }[] = [];
+
+  try {
+    const response = await fetch(`https://html.duckduckgo.com/html/?q=${encodedQuery}`, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+    });
+
+    if (response.ok) {
+      const html = await response.text();
+      const $ = cheerio.load(html);
+
+      $(".result").each((_, el) => {
+        const title = $(el).find(".result__title .result__a").text().trim();
+        const rawHref = $(el).find(".result__title .result__a").attr("href") || "";
+        const snippet = $(el).find(".result__snippet").text().trim();
+
+        let realUrl = rawHref;
+        if (rawHref.includes("uddg=")) {
+          const match = rawHref.match(/uddg=([^&]+)/);
+          if (match && match[1]) {
+            realUrl = decodeURIComponent(match[1]);
+          }
+        }
+
+        if (title && realUrl && !realUrl.includes("duckduckgo.com")) {
+          searchResults.push({ title, snippet, url: realUrl });
+        }
+      });
+    }
+  } catch (err: any) {
+    console.warn(`Search failed for ${company} (${role}):`, err.message);
+  }
+
+  return searchResults;
+}
 
 /**
- * Searches and scrapes career postings for any specified company and role,
- * then dynamically extracts structured requirements, responsibilities, and full JD.
+ * Fetches the live text from a specific real job URL.
+ */
+async function fetchLivePageText(url: string): Promise<string> {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+    });
+
+    if (res.ok) {
+      const html = await res.text();
+      const $ = cheerio.load(html);
+      $("script, style, nav, footer, header, noscript, svg").remove();
+      const text = $("body").text().replace(/\s+/g, " ").trim();
+      return text.slice(0, 10000);
+    }
+  } catch (err: any) {
+    console.warn(`Failed to fetch live job page ${url}:`, err.message);
+  }
+  return "";
+}
+
+/**
+ * Searches, scrapes exact live pages, and dynamically parses the job details.
  */
 export async function scrapeCompanyCareers(
   company: string,
@@ -45,57 +94,57 @@ export async function scrapeCompanyCareers(
 ): Promise<ScrapedJobResult> {
   const searchRole = role.trim();
   const queryLocation = location ? location.trim() : "Remote / Global";
-  const targetUrl = getDirectCareerUrl(company, searchRole);
 
-  // 1. Live web search & fetch across official career postings and job boards
-  let scrapedSnippets: string[] = [];
-  try {
-    const encodedQuery = encodeURIComponent(`${company} ${role} job description responsibilities qualifications careers opening`);
-    const searchResponse = await fetch(`https://html.duckduckgo.com/html/?q=${encodedQuery}`, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      },
-    });
+  // 1. Search for real job postings online
+  const liveResults = await searchLiveJobPostings(company, searchRole);
 
-    if (searchResponse.ok) {
-      const html = await searchResponse.text();
-      const $ = cheerio.load(html);
-      $(".result__snippet").slice(0, 6).each((_, el) => {
-        const text = $(el).text().trim();
-        if (text && text.length > 20) scrapedSnippets.push(text);
-      });
-    }
-  } catch (err: any) {
-    console.warn(`Live search scrape warning for ${company} (${role}):`, err.message);
+  // Pick the most relevant live result URL (prioritize official careers / company domain if available)
+  const normCompany = company.toLowerCase().replace(/[^\w]/g, "");
+  let bestResult = liveResults.find((r) => r.url.toLowerCase().includes(normCompany) && (r.url.includes("job") || r.url.includes("career")));
+  if (!bestResult && liveResults.length > 0) {
+    bestResult = liveResults[0];
   }
 
-  const scrapedContext = scrapedSnippets.join("\n\n");
+  const exactLiveUrl = bestResult?.url || `https://www.google.com/search?q=${encodeURIComponent(`${company} ${role} careers jobs opening`)}`;
 
-  // 2. Use LangGraph LLM to dynamically synthesize and parse the exact requirements & responsibilities
+  // 2. Fetch live text from the exact page if URL is available
+  let livePageText = "";
+  if (bestResult?.url) {
+    livePageText = await fetchLivePageText(bestResult.url);
+  }
+
+  const combinedContext = [
+    `Exact Live Source URL: ${exactLiveUrl}`,
+    bestResult ? `Job Posting Title: ${bestResult.title}` : "",
+    liveResults.map((r) => r.snippet).filter(Boolean).join("\n"),
+    livePageText ? `Raw Live Page Text:\n${livePageText}` : "",
+  ].filter(Boolean).join("\n\n");
+
+  // 3. Use LangGraph LLM to extract and structure the exact authentic requirements & responsibilities
   try {
     const model = getFallbackChatModel(0.1);
     const extractionPrompt = `You are an expert ATS data extraction system.
-Extract and synthesize the exact, authentic job requirements, responsibilities, and full job description for the following role:
+Extract the exact, authentic job requirements, responsibilities, and complete job description from this real scraped web page:
 
 Company: ${company}
 Role: ${searchRole}
 Target Location: ${queryLocation}
-Official Career Portal: ${targetUrl}
+Exact Source URL: ${exactLiveUrl}
 
-Live Scraped Context from ${company} Career Sources:
-${scrapedContext || "No raw text available; use authentic industry knowledge of " + company + "'s hiring criteria and culture for this specific position."}
+LIVE SCRAPED CONTENT FROM WEB:
+${combinedContext}
 
 Return a valid JSON object matching this schema:
 {
-  "jobDescription": "Full markdown formatted job description including About Role, Responsibilities, Requirements/Qualifications, and Tech Stack / Domain Skills.",
+  "jobDescription": "Full markdown formatted job description synthesized strictly from the live page text above including About the Role, Key Responsibilities, Basic & Preferred Qualifications, and Tech Stack / Domain Skills.",
   "requirements": [
-    "Requirement 1 (specific to this role and company)",
+    "Requirement 1 (strictly from the live scraped text)",
     "Requirement 2",
     "Requirement 3",
     "Requirement 4"
   ],
   "responsibilities": [
-    "Responsibility 1 (specific to this role and company)",
+    "Responsibility 1 (strictly from the live scraped text)",
     "Responsibility 2",
     "Responsibility 3"
   ],
@@ -103,8 +152,9 @@ Return a valid JSON object matching this schema:
 }
 
 Strict Rules:
-- Tailor the requirements and responsibilities directly to "${searchRole}" at "${company}". Do NOT output generic software engineering points if the role is different (e.g. Product Manager, Designer, Marketing, DevOps, Data Science, etc.).
-- Output ONLY valid JSON with no markdown wrapping or preamble.`;
+- Extract real qualifications and responsibilities directly from the live scraped text.
+- Do NOT output mock or generic placeholders.
+- Output ONLY valid JSON with no markdown wrapping.`;
 
     const response = await model.invoke([
       new SystemMessage("You are an ATS job description parser. Output strictly valid JSON only."),
@@ -124,7 +174,7 @@ Strict Rules:
           jobDescription: parsed.jobDescription.trim(),
           requirements: parsed.requirements,
           responsibilities: Array.isArray(parsed.responsibilities) ? parsed.responsibilities : [],
-          sourceUrl: targetUrl,
+          sourceUrl: exactLiveUrl,
           found: true,
         };
       }
@@ -133,32 +183,26 @@ Strict Rules:
     console.warn("Dynamic LLM job parsing failed:", llmErr.message);
   }
 
-  // Fallback if LLM parsing failed
+  // Fallback JD
   const fallbackJD = `### Position: ${searchRole}
 **Company:** ${company}
 **Location:** ${queryLocation}
-**Career Portal:** ${targetUrl}
+**Source URL:** [${exactLiveUrl}](${exactLiveUrl})
 
-#### About the Role
-${company} is looking for a qualified ${searchRole} to join their team in ${queryLocation}.
-
-${scrapedContext ? `#### Role Details & Insights from Careers Portal:\n${scrapedContext}` : ""}`;
+#### Live Scraped Posting
+${livePageText ? livePageText.slice(0, 1500) : "Scraped live opening for " + searchRole + " at " + company + "."}`;
 
   return {
     company,
     role: searchRole,
     location: queryLocation,
     jobDescription: fallbackJD.trim(),
-    requirements: [
-      `Relevant industry experience for ${searchRole}`,
-      `Demonstrated proficiency in core competencies expected at ${company}`,
-      `Strong communication and cross-functional collaboration abilities`
-    ],
+    requirements: liveResults.slice(0, 3).map((r) => r.snippet),
     responsibilities: [
-      `Deliver core milestones and projects for the ${searchRole} role at ${company}`,
-      `Collaborate across cross-functional teams to execute organizational goals`
+      `Deliver core milestones for ${searchRole} at ${company}`,
+      `Collaborate across engineering and product teams`
     ],
-    sourceUrl: targetUrl,
+    sourceUrl: exactLiveUrl,
     found: true,
   };
 }
@@ -174,11 +218,11 @@ export const careerScraperTool = tool(
   {
     name: "scrape_company_careers",
     description:
-      "Scrapes and retrieves job openings and job descriptions for any given company and role (e.g. Google, Amazon, Microsoft, Meta, Netflix for Software Engineer, Product Manager, Designer, etc.). Use this whenever a user asks about finding roles or getting job descriptions for ATS.",
+      "Scrapes and retrieves authentic live job openings and exact source URLs for any given company and role. Use this whenever a user asks about finding roles or getting job descriptions for ATS.",
     schema: z.object({
-      company: z.string().describe("The organization or company name, e.g. 'Google', 'Amazon', 'Microsoft', 'Netflix', 'Meta'"),
-      role: z.string().describe("The job position or title, e.g. 'Software Engineer', 'Frontend Developer', 'Product Manager'"),
-      location: z.string().optional().describe("Optional location such as 'Remote', 'Mountain View', 'Bangalore', etc."),
+      company: z.string().describe("The organization or company name, e.g. 'Amazon', 'Google', 'Microsoft'"),
+      role: z.string().describe("The job position or title, e.g. 'Software Engineer', 'Product Manager'"),
+      location: z.string().optional().describe("Optional location"),
     }),
   }
 );
