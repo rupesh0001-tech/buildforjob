@@ -1,52 +1,11 @@
 import type { Request, Response, NextFunction } from 'express';
-import { ai, groq } from '../../config/ai.config';
 import prisma from '../../config/db.config';
 import { deductTokens } from '../../utils/token.utils';
+import { runAIGeneratorGraph } from '../../services/langgraph/ai-generator.graph';
 
-// Helper to run AI generation with fallback
+// Helper to run AI generation with LangGraph
 async function generateAIText(prompt: string, systemMessage = "You are a professional resume and career assistant."): Promise<string> {
-  let generatedText = '';
-
-  const formatInstruction = "IMPORTANT: Return ONLY the exact raw text requested. Do NOT include any introductory or concluding text (such as 'Here is...', 'Certainly!', etc.), markdown code blocks, quotes, or conversational filler. Return ONLY the direct content itself.";
-  const fullPrompt = `${prompt}\n\n${formatInstruction}`;
-  const fullSystemMessage = `${systemMessage} Return ONLY the direct requested content, with no introductory or concluding filler.`;
-
-  // 1. Try Groq
-  if (process.env.GROQ_API_KEY) {
-    try {
-      const completion = await groq.chat.completions.create({
-        model: process.env.GROQ_MODEL || "openai/gpt-oss-120b",
-        messages: [
-          { role: "system", content: fullSystemMessage },
-          { role: "user", content: fullPrompt }
-        ]
-      });
-      generatedText = (completion.choices[0]?.message?.content || '').trim();
-    } catch (groqErr: any) {
-      console.error("Groq AI generation failed in optimize helper:", groqErr.message);
-    }
-  }
-
-  // 2. Fallback to Gemini
-  if (!generatedText && process.env.GEMINI_API_KEY) {
-    try {
-      const response = await ai.models.generateContent({
-        model: "gemini-1.5-flash",
-        contents: `${fullSystemMessage}\n\nUser request:\n${fullPrompt}`,
-      });
-      if (response.text) {
-        generatedText = response.text.trim();
-      }
-    } catch (geminiErr: any) {
-      console.error("Gemini AI generation failed in optimize helper:", geminiErr.message);
-    }
-  }
-
-  if (!generatedText) {
-    throw new Error('AI content generation failed across all available models.');
-  }
-
-  return generatedText;
+  return await runAIGeneratorGraph(prompt, systemMessage);
 }
 
 // 1. Auto Job Description Generator

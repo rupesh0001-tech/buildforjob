@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { CoverLetterPdfExportService } from '../../services/latex/cover-letter-pdf-export.service';
 import { getCoverLetterTemplate } from '../../services/latex/cover-letter-latex-renderer.service';
 
