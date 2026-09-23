@@ -23,12 +23,15 @@ import {
   Check,
   Search,
   Lock,
+  Bot,
+  ExternalLink,
 } from '@/lib/icons';
+import { useRouter } from "next/navigation";
 import { checkATSScore, getATSSuggestions, getATSReports, unlockReportSuggestions } from "@/apis/ats.api";
 import type { ATSResult, ATSSuggestions } from "@/apis/ats.api";
 import { getCompanies } from "@/apis/companies.api";
-import { paymentApi } from "@/apis/payment.api";
 import { generateJobDescription } from "@/apis/ai.api";
+import { scrapeCareer } from "@/apis/chat.api";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -233,6 +236,7 @@ function DropZone({
 
 export default function ATSCheckerPage() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const { user } = useAppSelector((state: any) => state.auth);
   const [file, setFile] = useState<File | null>(null);
   const [jd, setJd] = useState("");
@@ -257,6 +261,14 @@ export default function ATSCheckerPage() {
   const [selectedCompanyId, setSelectedCompanyId] = useState("");
   const [selectedRole, setSelectedRole] = useState("");
   const [jdGenerating, setJdGenerating] = useState(false);
+  const [scrapedPreview, setScrapedPreview] = useState<{
+    company: string;
+    role: string;
+    location?: string;
+    jobDescription: string;
+    requirements?: string[];
+    responsibilities?: string[];
+  } | null>(null);
 
   // Dropdown Refs & States
   const companyRef = useRef<HTMLDivElement>(null);
@@ -294,6 +306,27 @@ export default function ATSCheckerPage() {
     fetchCompanies();
   }, []);
 
+  // Read prefilled JD from AI Assistant if redirected
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedJd = sessionStorage.getItem("ats_prefill_jd");
+      const storedCompany = sessionStorage.getItem("ats_prefill_company");
+      const storedRole = sessionStorage.getItem("ats_prefill_role");
+      if (storedJd) {
+        setJd(storedJd);
+        sessionStorage.removeItem("ats_prefill_jd");
+        toast.success(`Loaded scraped job description for ${storedCompany || "selected role"}!`);
+      }
+      if (storedRole) {
+        setSelectedRole(storedRole);
+        sessionStorage.removeItem("ats_prefill_role");
+      }
+      if (storedCompany) {
+        sessionStorage.removeItem("ats_prefill_company");
+      }
+    }
+  }, []);
+
   const handleGenerateCompanyRoleJD = async () => {
     if (!isPro) {
       setShowProModal(true);
@@ -308,11 +341,16 @@ export default function ATSCheckerPage() {
 
     try {
       setJdGenerating(true);
-      const generatedText = await generateJobDescription(selectedCompany.name, [selectedRole]);
-      setJd(generatedText);
-      toast.success(`Generated optimized ${selectedRole} job description for ${selectedCompany.name}!`);
+      const scrapedData = await scrapeCareer(selectedCompany.name, selectedRole);
+      if (scrapedData && scrapedData.jobDescription) {
+        setScrapedPreview(scrapedData);
+      } else {
+        const fallbackText = await generateJobDescription(selectedCompany.name, [selectedRole]);
+        setJd(fallbackText);
+        toast.success(`Generated job description for ${selectedCompany.name}!`);
+      }
     } catch (error: any) {
-      const msg = getErrorMessage(error, "Failed to generate job description with AI.");
+      const msg = getErrorMessage(error, "Failed to scrape job description from the internet.");
       toast.error(msg);
     } finally {
       setJdGenerating(false);
@@ -662,7 +700,7 @@ export default function ATSCheckerPage() {
               {/* Auto-Fill Job Description */}
               <div className="space-y-2">
                 <label className="text-[10px] uppercase tracking-widest font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-2 px-1">
-                  Auto-Fill Job Description
+                  Auto-Fill Job Description (Live Scrape)
                 </label>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   {/* Company Dropdown */}
@@ -1262,6 +1300,83 @@ export default function ATSCheckerPage() {
               <RotateCcw size={14} /> Check Another Resume
             </button>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Scraped Career Confirmation Modal ── */}
+      <AnimatePresence>
+        {scrapedPreview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="relative w-full max-w-lg bg-white dark:bg-[#121216] border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl p-6 overflow-hidden"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-black/5 dark:border-white/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
+                    <Building2 size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-gray-900 dark:text-white">
+                      Found Role at {scrapedPreview.company}
+                    </h3>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                      {scrapedPreview.role} • {scrapedPreview.location || "Live Careers Opening"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setScrapedPreview(null)}
+                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="py-4 space-y-3 max-h-72 overflow-y-auto pr-1">
+                <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">
+                  We found and scraped this role from the live career portal. Should I take this job description and load it into your ATS Checker?
+                </p>
+
+                {scrapedPreview.requirements && scrapedPreview.requirements.length > 0 && (
+                  <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 space-y-1.5">
+                    <p className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
+                      Extracted Requirements:
+                    </p>
+                    <ul className="text-xs text-gray-600 dark:text-gray-300 space-y-1 list-disc pl-4">
+                      {scrapedPreview.requirements.slice(0, 3).map((req, idx) => (
+                        <li key={idx}>{req}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/5">
+                <button
+                  type="button"
+                  onClick={() => setScrapedPreview(null)}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setJd(scrapedPreview.jobDescription);
+                    toast.success(`Loaded ${scrapedPreview.role} job description for ${scrapedPreview.company}!`);
+                    setScrapedPreview(null);
+                  }}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Check size={14} />
+                  Yes, Use in ATS
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
