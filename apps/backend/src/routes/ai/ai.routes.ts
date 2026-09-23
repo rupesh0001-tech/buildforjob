@@ -5,6 +5,10 @@ import {
   optimizeResume, 
   optimizeCoverLetter 
 } from '../../controllers/ai/optimize.controller';
+import { 
+  chatWithAssistant, 
+  scrapeCareerJob 
+} from '../../controllers/ai/chat.controller';
 import { authenticateJWT } from '../../middlewares/auth/jwt.middleware';
 import { requirePro } from '../../middlewares/auth/plan.middleware';
 import { aiRateLimiter } from '../../middlewares/rate-limit/rate-limiter';
@@ -14,6 +18,11 @@ const router = Router();
 router.use(authenticateJWT);
 router.use(aiRateLimiter);
 
+// AI Assistant & Tools
+router.post('/chat', chatWithAssistant);
+router.post('/scrape-career', scrapeCareerJob);
+
+// AI Generation & Optimization
 router.post('/generate', generateAIContent);
 router.post('/generate-jd', requirePro, generateJobDescription);
 router.post('/optimize-resume', requirePro, optimizeResume);
