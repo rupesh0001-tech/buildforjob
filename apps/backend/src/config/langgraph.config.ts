@@ -39,7 +39,7 @@ export const getFallbackChatModel = (temperature = 0.3): BaseChatModel => {
     return groqModel.withFallbacks({
       fallbacks: [
         geminiModel,
-        getGeminiChatModel(temperature, "gemini-2.5-pro") || geminiModel,
+        getGeminiChatModel(temperature, "gemini-3.6-flash") || geminiModel,
       ],
     }) as unknown as BaseChatModel;
   }

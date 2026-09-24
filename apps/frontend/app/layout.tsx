@@ -16,8 +16,10 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://buildforjob.rupeshhh.in";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://buildforjob.com"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "BuildForJob | #1 AI Resume Builder, ATS Checker & Portfolio Generator",
     template: "%s | BuildForJob",
@@ -50,12 +52,12 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: "https://buildforjob.com",
+    canonical: SITE_URL,
   },
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://buildforjob.com",
+    url: SITE_URL,
     title: "BuildForJob | #1 AI Resume Builder & ATS Score Checker",
     description: "Build ATS-optimized resumes, tailored cover letters, and GitHub sync portfolios. Land 3x more interviews.",
     siteName: "BuildForJob",
@@ -75,9 +77,11 @@ export const metadata: Metadata = {
     images: ["/main-dashboard.png"],
   },
   icons: {
-    icon: "/favicon.svg",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
   },
 };
 
