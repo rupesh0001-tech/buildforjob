@@ -568,13 +568,13 @@ export default function ResumeBuilderPage() {
 
           {/* Main Card */}
           <div 
-            className="w-[794px] bg-white rounded-2xl border border-gray-200/80 dark:border-white/10 overflow-hidden flex flex-col shadow-2xl relative"
-            style={{ isolation: 'isolate', transform: 'translateZ(0)', WebkitMaskImage: '-webkit-radial-gradient(white, black)' }}
+            className="w-[794px] bg-white rounded-none border border-gray-200/80 dark:border-white/10 overflow-hidden flex flex-col shadow-2xl relative"
+            style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
           >
             {previewMode === "preview" ? (
               pdfBlobUrl ? (
                 <div 
-                  className="w-full h-[1123px] bg-white overflow-hidden rounded-2xl relative"
+                  className="w-full h-[1028px] bg-white overflow-hidden rounded-none relative"
                   style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
                 >
                   {isCompiling && (
@@ -584,14 +584,14 @@ export default function ResumeBuilderPage() {
                     </div>
                   )}
                   <iframe
-                    src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                    className="w-full h-full border-0 block rounded-2xl"
+                    src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                    className="w-full h-full border-0 block rounded-none bg-white"
                     style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
                     title="Resume PDF Preview"
                   />
                 </div>
               ) : isCompiling ? (
-                <div className="w-full h-[1123px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8 rounded-2xl">
+                <div className="w-full h-[1028px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8 rounded-none">
                   <Loader2 className="animate-spin text-[#001BB7]" size={36} />
                   <div className="space-y-1">
                     <h4 className="text-sm font-bold text-gray-900 dark:text-white">Compiling PDF...</h4>
@@ -599,7 +599,7 @@ export default function ResumeBuilderPage() {
                   </div>
                 </div>
               ) : compileError ? (
-                <div className="w-full h-[600px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8 rounded-2xl">
+                <div className="w-full h-[600px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8 rounded-none">
                   <div className="text-red-500 font-bold text-sm">Compilation Failed</div>
                   <p className="text-xs text-gray-500 max-w-md">{compileError}</p>
                   <button
@@ -610,7 +610,7 @@ export default function ResumeBuilderPage() {
                   </button>
                 </div>
               ) : (
-                <div className="w-full h-[1123px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8 rounded-2xl">
+                <div className="w-full h-[1028px] bg-white dark:bg-[#0f0f15] flex flex-col items-center justify-center gap-4 text-center p-8 rounded-none">
                   <Loader2 className="animate-spin text-[#001BB7]" size={36} />
                   <div className="space-y-1">
                     <h4 className="text-sm font-bold text-gray-900 dark:text-white">Generating Resume Preview...</h4>
@@ -619,7 +619,7 @@ export default function ResumeBuilderPage() {
                 </div>
               )
             ) : (
-              <div className="w-full min-h-[600px] max-h-[850px] bg-[#0f0f15] flex flex-col text-xs font-mono rounded-2xl overflow-hidden">
+              <div className="w-full min-h-[600px] max-h-[850px] bg-[#0f0f15] flex flex-col text-xs font-mono rounded-none overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2.5 bg-[#171722] border-b border-white/5 text-[11px] text-gray-400 select-none">
                   <span className="flex items-center gap-1.5 text-gray-300 font-sans">
                     <FileCode size={14} className="text-blue-400" />

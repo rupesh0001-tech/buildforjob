@@ -150,18 +150,17 @@ const ResumePreview = ({ stateOverride }: { stateOverride?: any }) => {
   return (
     <div 
       ref={containerRef}
-      className="resume-preview-container bg-white border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden shadow-2xl"
+      className="resume-preview-container bg-white border border-gray-200 dark:border-white/10 rounded-none overflow-hidden shadow-2xl"
       style={{
         width: scale < 1 ? "100%" : "210mm",
         height: scaledHeight,
         minHeight: scale < 1 ? scaledHeight : "297mm",
         isolation: 'isolate',
         transform: 'translateZ(0)',
-        WebkitMaskImage: '-webkit-radial-gradient(white, black)',
       }}
     >
       <div 
-        className="mobile-scale-wrapper rounded-xl overflow-hidden"
+        className="mobile-scale-wrapper rounded-none overflow-hidden"
         style={{
           transform: scale < 1 ? `scale(${scale})` : "none",
           transformOrigin: "top center",
@@ -170,7 +169,7 @@ const ResumePreview = ({ stateOverride }: { stateOverride?: any }) => {
           margin: "0 auto",
         }}
       >
-        <div id="resume-preview" className="print:shadow-none print:border-none w-[794px] min-h-[1123px] rounded-xl overflow-hidden">
+        <div id="resume-preview" className="print:shadow-none print:border-none w-[794px] min-h-[1123px] rounded-none overflow-hidden">
           {renderTemplate()}
         </div>
       </div>

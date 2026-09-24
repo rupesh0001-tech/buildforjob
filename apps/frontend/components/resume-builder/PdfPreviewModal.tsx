@@ -257,8 +257,8 @@ export function PdfPreviewModal({
               pdfBlobUrl ? (
                 <iframe
                   id="pdf-preview-frame"
-                  src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                  className="w-full h-full border-0 block rounded-b-2xl"
+                  src={`${pdfBlobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                  className="w-full h-full border-0 block bg-white rounded-none"
                   style={{ isolation: 'isolate', transform: 'translateZ(0)' }}
                   title="LaTeX PDF Preview"
                 />

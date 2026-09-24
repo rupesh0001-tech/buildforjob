@@ -18,21 +18,13 @@ import {
   ArrowLeft,
   ArrowRight,
   Loader2,
-  Building2,
-  ChevronDown,
-  Check,
-  Search,
+  Briefcase,
   Lock,
-  Bot,
-  ExternalLink,
-  Globe,
 } from '@/lib/icons';
 import { useRouter } from "next/navigation";
 import { checkATSScore, getATSSuggestions, getATSReports, unlockReportSuggestions } from "@/apis/ats.api";
 import type { ATSResult, ATSSuggestions } from "@/apis/ats.api";
-import { getCompanies } from "@/apis/companies.api";
 import { generateJobDescription } from "@/apis/ai.api";
-import { scrapeCareer } from "@/apis/chat.api";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
@@ -257,102 +249,45 @@ export default function ATSCheckerPage() {
   const [history, setHistory] = useState<ATSResult[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // Company Profiles for Auto-Fill
-  const [companies, setCompanies] = useState<any[]>([]);
-  const [selectedCompanyId, setSelectedCompanyId] = useState("");
+  // Job Title for Auto-Fill
   const [selectedRole, setSelectedRole] = useState("");
   const [jdGenerating, setJdGenerating] = useState(false);
-  const [scrapedPreview, setScrapedPreview] = useState<{
-    company: string;
-    role: string;
-    location?: string;
-    jobDescription: string;
-    requirements?: string[];
-    responsibilities?: string[];
-    sourceUrl?: string;
-  } | null>(null);
 
-  // Dropdown Refs & States
-  const companyRef = useRef<HTMLDivElement>(null);
-  const roleRef = useRef<HTMLDivElement>(null);
-  const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
-  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
-  const [companySearch, setCompanySearch] = useState("");
-
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (companyRef.current && !companyRef.current.contains(e.target as Node)) {
-        setCompanyDropdownOpen(false);
-      }
-      if (roleRef.current && !roleRef.current.contains(e.target as Node)) {
-        setRoleDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
-
-  useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const response = await getCompanies();
-        if (response.success) {
-          // Filter to show only CompanyProfile (isCustom === false)
-          const globalCompanies = response.data.filter((c: any) => !c.isCustom);
-          setCompanies(globalCompanies);
-        }
-      } catch (err) {
-        console.error("Failed to load companies:", err);
-      }
-    };
-    fetchCompanies();
-  }, []);
-
-  // Read prefilled JD from AI Assistant if redirected
+  // Read prefilled JD or Role from AI Assistant if redirected
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedJd = sessionStorage.getItem("ats_prefill_jd");
-      const storedCompany = sessionStorage.getItem("ats_prefill_company");
       const storedRole = sessionStorage.getItem("ats_prefill_role");
       if (storedJd) {
         setJd(storedJd);
         sessionStorage.removeItem("ats_prefill_jd");
-        toast.success(`Loaded scraped job description for ${storedCompany || "selected role"}!`);
+        toast.success(`Loaded job description for ${storedRole || "selected role"}!`);
       }
       if (storedRole) {
         setSelectedRole(storedRole);
         sessionStorage.removeItem("ats_prefill_role");
       }
-      if (storedCompany) {
-        sessionStorage.removeItem("ats_prefill_company");
-      }
+      sessionStorage.removeItem("ats_prefill_company");
     }
   }, []);
 
-  const handleGenerateCompanyRoleJD = async () => {
+  const handleGenerateRoleJD = async () => {
     if (!isPro) {
       setShowProModal(true);
       return;
     }
-    if (!selectedCompanyId || !selectedRole) {
-      toast.error("Please select a target company and role.");
+    if (!selectedRole.trim()) {
+      toast.error("Please enter or select a job title.");
       return;
     }
-    const selectedCompany = companies.find(c => c.id === selectedCompanyId);
-    if (!selectedCompany) return;
 
     try {
       setJdGenerating(true);
-      const scrapedData = await scrapeCareer(selectedCompany.name, selectedRole);
-      if (scrapedData && scrapedData.jobDescription) {
-        setScrapedPreview(scrapedData);
-      } else {
-        const fallbackText = await generateJobDescription(selectedCompany.name, [selectedRole]);
-        setJd(fallbackText);
-        toast.success(`Generated job description for ${selectedCompany.name}!`);
-      }
+      const generatedText = await generateJobDescription([selectedRole.trim()]);
+      setJd(generatedText);
+      toast.success(`Generated job description for ${selectedRole.trim()}!`);
     } catch (error: any) {
-      const msg = getErrorMessage(error, "Failed to scrape job description from the internet.");
+      const msg = getErrorMessage(error, "Failed to generate job description.");
       toast.error(msg);
     } finally {
       setJdGenerating(false);
@@ -617,34 +552,6 @@ export default function ATSCheckerPage() {
     }
   };
 
-  const getIndustryLabel = (industry: string) => {
-    switch (industry) {
-      case 'Big Tech':
-        return 'Big Tech';
-      case 'FinTech':
-        return 'FinTech';
-      case 'SaaS':
-        return 'SaaS / Product';
-      case 'Unicorn':
-        return 'Startups / Unicorns';
-      default:
-        return industry;
-    }
-  };
-
-  const filteredCompanies = companies.filter(c =>
-    c.name.toLowerCase().includes(companySearch.toLowerCase())
-  );
-
-  const groupedCompanies = filteredCompanies.reduce((acc: any, company: any) => {
-    const industry = company.industry || "Other";
-    if (!acc[industry]) {
-      acc[industry] = [];
-    }
-    acc[industry].push(company);
-    return acc;
-  }, {});
-
   const improvementCount = result ? Math.max(3, Math.floor((105 - result.score) / 6)) : 0;
 
   return (
@@ -702,147 +609,34 @@ export default function ATSCheckerPage() {
               {/* Auto-Fill Job Description */}
               <div className="space-y-2">
                 <label className="text-[10px] uppercase tracking-widest font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-2 px-1">
-                  Auto-Fill Job Description (Live Scrape)
+                  Auto-Fill Job Description
                 </label>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  {/* Company Dropdown */}
-                  <div className="relative flex-1" ref={companyRef}>
-                    <button
-                      type="button"
-                      onClick={() => setCompanyDropdownOpen(!companyDropdownOpen)}
-                      className="w-full flex items-center justify-between px-5 py-4 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#001BB7]/20 focus:border-[#001BB7] transition-all cursor-pointer"
-                    >
-                      <span className="truncate">
-                        {selectedCompanyId ? companies.find(c => c.id === selectedCompanyId)?.name : <span className="text-gray-400">Select Company</span>}
-                      </span>
-                      <ChevronDown size={16} className={`text-gray-400 shrink-0 ml-2 transition-transform duration-200 ${companyDropdownOpen ? "rotate-180" : ""}`} />
-                    </button>
-
-                    <AnimatePresence>
-                      {companyDropdownOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 6, scale: 0.99 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 6, scale: 0.99 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute left-0 right-0 mt-1.5 bg-white dark:bg-[#0a0a10] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl z-[60] overflow-hidden flex flex-col max-h-72"
-                        >
-                          {/* Search */}
-                          <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-white/5">
-                            <Search size={14} className="text-gray-400 shrink-0" />
-                            <input
-                              type="text"
-                              placeholder="Search company..."
-                              value={companySearch}
-                              onChange={(e) => setCompanySearch(e.target.value)}
-                              onClick={(e) => e.stopPropagation()}
-                              className="w-full bg-transparent text-sm font-medium focus:outline-none text-gray-900 dark:text-white placeholder:text-gray-400"
-                            />
-                          </div>
-
-                          <div className="flex-1 overflow-y-auto">
-                            {Object.keys(groupedCompanies).length > 0 ? (
-                              Object.keys(groupedCompanies).map(industry => (
-                                <div key={industry}>
-                                  <div className="px-4 py-2 text-[10px] font-semibold text-gray-400 uppercase tracking-widest bg-gray-50 dark:bg-white/5 select-none">
-                                    {getIndustryLabel(industry)}
-                                  </div>
-                                  {groupedCompanies[industry].map((company: any) => {
-                                    const isSelected = selectedCompanyId === company.id;
-                                    return (
-                                      <button
-                                        key={company.id}
-                                        type="button"
-                                        onClick={() => {
-                                          setSelectedCompanyId(company.id);
-                                          setCompanyDropdownOpen(false);
-                                          setCompanySearch("");
-                                        }}
-                                        className={`w-full text-left px-4 py-3 text-sm font-medium flex items-center justify-between hover:bg-gray-50 dark:hover:bg-white/5 transition-colors ${
-                                          isSelected ? "text-[#001BB7] dark:text-blue-400 bg-blue-50/50 dark:bg-blue-500/5" : "text-gray-900 dark:text-white"
-                                        }`}
-                                      >
-                                        <span className="truncate">{company.name}</span>
-                                        {isSelected && <Check size={14} className="text-[#001BB7] dark:text-blue-400 shrink-0" />}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              ))
-                            ) : (
-                              <div className="px-4 py-8 text-center text-sm text-gray-400">
-                                No companies found
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Job Role Dropdown */}
-                  <div className="relative flex-1" ref={roleRef}>
-                    <button
-                      type="button"
-                      onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-                      className="w-full flex items-center justify-between px-5 py-4 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#001BB7]/20 focus:border-[#001BB7] transition-all cursor-pointer"
-                    >
-                      <span className="truncate">
-                        {selectedRole ? selectedRole : <span className="text-gray-400">Select Job Role</span>}
-                      </span>
-                      <ChevronDown size={16} className={`text-gray-400 shrink-0 ml-2 transition-transform duration-200 ${roleDropdownOpen ? "rotate-180" : ""}`} />
-                    </button>
-
-                    <AnimatePresence>
-                      {roleDropdownOpen && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 6, scale: 0.99 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 6, scale: 0.99 }}
-                          transition={{ duration: 0.15 }}
-                          className="absolute left-0 right-0 mt-1.5 bg-white dark:bg-[#0a0a10] border border-gray-200 dark:border-white/10 rounded-xl shadow-xl z-[60] overflow-hidden flex flex-col max-h-72"
-                        >
-                          <div className="overflow-y-auto py-1">
-                            {[
-                              "Software Engineer",
-                              "Frontend Engineer",
-                              "Backend Engineer",
-                              "Fullstack Engineer",
-                              "Mobile Engineer",
-                              "DevOps Engineer",
-                              "Data Scientist",
-                              "Product Manager",
-                              "QA Engineer"
-                            ].map((role) => {
-                              const isSelected = selectedRole === role;
-                              return (
-                                <button
-                                  key={role}
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedRole(role);
-                                    setRoleDropdownOpen(false);
-                                  }}
-                                  className={`w-full text-left px-4 py-3 text-sm font-medium flex items-center justify-between hover:bg-gray-50 dark:hover:bg-white/5 transition-colors ${
-                                    isSelected ? "text-[#001BB7] dark:text-blue-400 bg-blue-50/50 dark:bg-blue-500/5" : "text-gray-900 dark:text-white"
-                                  }`}
-                                >
-                                  <span>{role}</span>
-                                  {isSelected && <Check size={14} className="text-[#001BB7] dark:text-blue-400 shrink-0" />}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                  {/* Job Title Input */}
+                  <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                      <Briefcase size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && selectedRole.trim() && !jdGenerating) {
+                          e.preventDefault();
+                          handleGenerateRoleJD();
+                        }
+                      }}
+                      placeholder="Enter target job title (e.g. Full Stack Developer, Product Manager...)"
+                      className="w-full pl-11 pr-4 py-4 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-sm font-medium text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#001BB7]/20 focus:border-[#001BB7] transition-all"
+                    />
                   </div>
 
                   {/* Generate Button */}
                   <button
                     type="button"
-                    disabled={!selectedCompanyId || !selectedRole || jdGenerating}
-                    onClick={handleGenerateCompanyRoleJD}
+                    disabled={!selectedRole.trim() || jdGenerating}
+                    onClick={handleGenerateRoleJD}
                     className="px-5 py-4 bg-[#001BB7] hover:bg-[#0020d4] text-white rounded-xl text-sm font-medium transition-all disabled:opacity-40 cursor-pointer flex items-center justify-center gap-2 shrink-0 shadow-md shadow-blue-500/20"
                   >
                     {jdGenerating ? (
@@ -862,6 +656,34 @@ export default function ATSCheckerPage() {
                       </>
                     )}
                   </button>
+                </div>
+
+                {/* Popular Job Title suggestions */}
+                <div className="flex items-center gap-1.5 flex-wrap pt-1 px-1">
+                  <span className="text-[11px] text-gray-400 font-medium mr-1">Popular:</span>
+                  {[
+                    "Frontend Developer",
+                    "Backend Engineer",
+                    "Full Stack Developer",
+                    "DevOps Engineer",
+                    "Data Scientist",
+                    "Product Manager",
+                    "Mobile Engineer",
+                    "QA Engineer"
+                  ].map((role) => (
+                    <button
+                      key={role}
+                      type="button"
+                      onClick={() => setSelectedRole(role)}
+                      className={`text-xs px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                        selectedRole === role
+                          ? "bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 font-medium"
+                          : "border-gray-200 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] text-gray-600 dark:text-gray-400 hover:border-gray-300 dark:hover:border-white/20 hover:text-gray-900 dark:hover:text-white"
+                      }`}
+                    >
+                      {role}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1305,100 +1127,7 @@ export default function ATSCheckerPage() {
         )}
       </AnimatePresence>
 
-      {/* ── Scraped Career Confirmation Modal ── */}
-      <AnimatePresence>
-        {scrapedPreview && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="relative w-full max-w-lg bg-white dark:bg-[#121216] border border-black/10 dark:border-white/10 rounded-2xl shadow-2xl p-6 overflow-hidden"
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-black/5 dark:border-white/5">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm">
-                    <Building2 size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base text-gray-900 dark:text-white">
-                      Found Role at {scrapedPreview.company}
-                    </h3>
-                    <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                      {scrapedPreview.role} • {scrapedPreview.location || "Live Careers Opening"}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setScrapedPreview(null)}
-                  className="p-1 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
-                >
-                  <X size={18} />
-                </button>
-              </div>
 
-              <div className="py-4 space-y-3 max-h-72 overflow-y-auto pr-1">
-                <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">
-                  We found and scraped this role from the live career portal. Should I take this job description and load it into your ATS Checker?
-                </p>
-
-                {scrapedPreview.requirements && scrapedPreview.requirements.length > 0 && (
-                  <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 space-y-1.5">
-                    <p className="text-[11px] font-bold text-gray-900 dark:text-white uppercase tracking-wider">
-                      Extracted Requirements:
-                    </p>
-                    <ul className="text-xs text-gray-600 dark:text-gray-300 space-y-1 list-disc pl-4">
-                      {scrapedPreview.requirements.slice(0, 3).map((req, idx) => (
-                        <li key={idx}>{req}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {scrapedPreview.sourceUrl && (
-                  <div className="flex items-center justify-between p-2.5 bg-blue-50/70 dark:bg-blue-950/30 rounded-xl border border-blue-500/20 text-xs">
-                    <span className="font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5 truncate">
-                      <Globe size={13} className="text-blue-500 shrink-0" />
-                      Live Career Source:
-                    </span>
-                    <a
-                      href={scrapedPreview.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 dark:text-blue-400 font-semibold hover:underline flex items-center gap-1 shrink-0 cursor-pointer ml-2"
-                    >
-                      View Live Source
-                      <ExternalLink size={11} />
-                    </a>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-3 pt-4 border-t border-black/5 dark:border-white/5">
-                <button
-                  type="button"
-                  onClick={() => setScrapedPreview(null)}
-                  className="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 dark:border-white/10 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setJd(scrapedPreview.jobDescription);
-                    toast.success(`Loaded ${scrapedPreview.role} job description for ${scrapedPreview.company}!`);
-                    setScrapedPreview(null);
-                  }}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Check size={14} />
-                  Yes, Use in ATS
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <ProPlanModal
         isOpen={showProModal}

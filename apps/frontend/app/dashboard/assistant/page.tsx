@@ -132,42 +132,9 @@ export default function AssistantPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-5rem)] max-w-5xl mx-auto">
-      {/* Header Bar */}
-      <div className="flex items-center justify-between pb-4 border-b border-black/5 dark:border-white/5 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-            <Bot className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-                AI Career Navigator
-              </h1>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                Persistent Chat
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Preserved across navigation • Live dynamic career scraping tools
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleClearChat}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
-            title="Reset conversation"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            Clear
-          </button>
-        </div>
-      </div>
-
+    <div className="flex flex-col h-[calc(100vh-6rem)] max-w-5xl mx-auto pb-4">
       {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto py-6 space-y-6 pr-2">
+      <div className="flex-1 overflow-y-auto py-4 space-y-6 pr-2 scrollbar-hide">
         <AnimatePresence initial={false}>
           {messages.map((msg, idx) => {
             const isUser = msg.role === "user";
@@ -342,7 +309,7 @@ export default function AssistantPage() {
       )}
 
       {/* Input Form Bar */}
-      <div className="pt-2 border-t border-black/5 dark:border-white/5 shrink-0">
+      <div className="pt-2 pb-2 border-t border-black/5 dark:border-white/5 shrink-0">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -379,9 +346,22 @@ export default function AssistantPage() {
           </button>
         </form>
 
-        <div className="flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 mt-1.5 px-2">
+        <div className="flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 mt-2 px-2">
           <span>Press <kbd className="font-mono bg-black/5 dark:bg-white/5 px-1 py-0.5 rounded text-[10px]">Enter</kbd> to send, <kbd className="font-mono bg-black/5 dark:bg-white/5 px-1 py-0.5 rounded text-[10px]">Shift+Enter</kbd> for new line</span>
-          <span>Preserved across sidebar navigation</span>
+          <div className="flex items-center gap-3">
+            <span>Preserved across sidebar navigation</span>
+            {messages.length > 0 && (
+              <button
+                type="button"
+                onClick={handleClearChat}
+                className="hover:text-red-500 transition-colors flex items-center gap-1 cursor-pointer"
+                title="Reset conversation"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Clear Chat
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

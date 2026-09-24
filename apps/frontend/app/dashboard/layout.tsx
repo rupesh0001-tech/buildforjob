@@ -105,7 +105,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <DashboardHeader isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
         
         <main className={cn(
-          "flex-1 overflow-y-auto p-6 md:p-8 relative transition-all duration-500 ease-in-out",
+          "flex-1 overflow-y-auto p-6 md:p-8 relative transition-all duration-500 ease-in-out scrollbar-hide",
           isBuilderPage && isSidebarOpen && "blur-md pointer-events-none",
           isMobile && isSidebarOpen && "blur-xs pointer-events-none lg:blur-none lg:pointer-events-auto"
         )}>

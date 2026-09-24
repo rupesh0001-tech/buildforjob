@@ -8,7 +8,7 @@ export const generateAI = async (prompt: string, type?: string): Promise<string>
   return response.data.data.text;
 };
 
-export const generateJobDescription = async (companyName: string, roles: string[]): Promise<string> => {
-  const response = await api.post('/ai/generate-jd', { companyName, roles });
+export const generateJobDescription = async (roles: string[], companyName?: string): Promise<string> => {
+  const response = await api.post('/ai/generate-jd', { companyName: companyName || '', roles });
   return response.data.data.text;
 };
