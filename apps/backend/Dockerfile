@@ -6,11 +6,11 @@ WORKDIR /usr/src/app
 RUN groupadd -r appgroup && useradd -r -g appgroup -d /usr/src/app appuser
 
 # Copy package files and Prisma schema with appropriate ownership
-COPY --chown=appuser:appgroup package.json bun.lock ./
+COPY --chown=appuser:appgroup package.json ./
 COPY --chown=appuser:appgroup prisma ./prisma/
 
 # Install dependencies (triggers postinstall: prisma generate)
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copy the rest of the source code
 COPY --chown=appuser:appgroup src ./src
